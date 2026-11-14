@@ -92,45 +92,48 @@ artifact with 2–3 options, not in the repo. Details: playbook `working-with-th
 - Plain HTML/CSS/JS with no build step unless the user agrees otherwise.
 - Never edit `stage.js` by hand for deploys.
 
-## Notes
+## How this app is built
 
-- Browser storage is shared by all stages **and all apps** on `thedodgykiwi.github.io`
-  (one web address): key it per app and stage.
-- **App screens: Preact + htm + Signals** (React-style, no build step;
-  libraries in `vendor/`, imported by name via the import map). Entry:
-  `app/main.js`. `app/example.js` is the starter's demo: **delete it and its
-  import when building the first real screen.** Patterns: playbook
-  `preact.md`; live examples: the style guide's "Components" section.
-- **Look and building blocks:** use the style kit in `style.css` (buttons
-  `.btn primary|secondary|outline|ghost|danger`, `.field`/`.input`/`.select`,
-  `.check`, `.card`, `.badge`, `.list`, `.notice`, `.empty-state`…). Live
-  examples with copy-ready HTML: `styleguide.html` (linked from Settings on
-  test stages). Don't invent new button or field styles.
-- Colours only via the variables (`--bg`, `--surface`, `--text`, `--muted`,
-  `--line`, `--accent`, `--accent-fg`…), so Light / Dark / Auto and the accent
-  colour keep working. Size things in rem/em so Large text works.
-- The app's default accent colour: `data-accent` on `<html>` in `index.html`
-  (blue, purple, green, teal, orange, pink); people can change it in Settings.
-- Icons: **Phosphor Regular** only, in `icons.js` (`icon('name')` or
-  `<span data-icon="name"></span>`); copy new ones from
-  `@phosphor-icons/core` `assets/regular/<name>.svg`.
-- Works offline (`sw.js`, registered by `pwa.js`): the page is fetched
-  network-first, files the deploy stamps with `?v=` are kept offline. New
-  files the app loads are stamped automatically if linked from `index.html`
-  with `href`/`src`. Test offline with the browser's network set to Offline.
-- Empty lists: `EmptyState` (ui.js); while loading: skeletons (ui.js), not
-  "Loading…" text. Call `AppReady()` once the first screen is drawn
-  (error-screen.js covers failures before that).
-- Messages: use `AppToast.show(…)` (toast.js; with an Undo action for anything
-  undoable). If the app has a bar fixed at the bottom, set `--toast-bottom`.
-- App settings go in the Settings panel (`#settings` in `index.html`, saved by
-  `menu.js` with the theme and text size).
-- <App-specific notes, setup facts (e.g. Firebase project, Firestore location), quirks.>
+Rebuilt from the original ChatGPT Sites version (export kept in
+`reference/edit-1-job-board-source.zip`; its README/MIGRATION notes describe
+the original server). The board's screens and logic were **ported as-is**
+(plain JavaScript, its own look), and only its storage was swapped for
+Firestore. So this app does **not** use the starter's Preact/style kit.
 
-## Sign-in and cloud data (optional, off until set up)
+| File | What it is |
+|---|---|
+| `index.html` | The board's markup + stage banner + sign-in panel |
+| `board.js` | The board (original `app.js`): rendering, jobs, suites, editors, checklist, history search UI |
+| `board.css` | The board's own look, incl. its light/dark theme (`html[data-theme]`) |
+| `cloud.js` | Firestore storage (`window.Edit1Cloud`) + sign-in gate / access check |
+| `shell.js`, `shell.css` | Stage banner, signed-in account in Settings, sign-in panel styles |
+| `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
+| `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`) |
 
-`account.js` provides Google sign-in and Firestore access, dormant while
-`firebase-config.js` is `null`. To switch it on, follow the playbook's
-`firebase-auth-and-firestore.md` (Firebase project, database location, rules
-for this app's data with tests, deployed before the app, emulator testing).
-The app listens for `account:change` and saves its own data per stage.
+- `board.js` must load **after** `cloud.js` (it's `defer`, cloud.js is a module; both run in order).
+- Saves use a **revision number** (compare-and-swap): a save only goes
+  through if nobody saved since; otherwise the board shows "Someone else
+  changed this board" and keeps the unsaved copy on the device. A live
+  listener tells the board's 10-second check about new revisions without
+  extra reads.
+- History search runs in the browser over all saved days (`cloud.js`
+  `search`/`facets`, a port of the old SQL in the reference zip).
+- Display settings stay per device (localStorage); unsaved-draft keys are per stage.
+- No offline mode / install prompt yet (starter's `pwa.js`/`sw.js` not wired in).
+- Browser storage is shared by all stages and apps on `thedodgykiwi.github.io`: key it per app and stage.
+
+## Firebase (set up 2026-11-14)
+
+- Project `edit1-jobs-6f37bc`, web app `1:255253263372:web:543f231296af4962f72a29`,
+  Firestore `(default)` in **eur3**, Standard, free tier, delete protection on.
+- Google sign-in on; authorised domains: localhost, the project's own two, `thedodgykiwi.github.io`.
+- Data: `stages/{stage}/boards/{YYYY-MM-DD}` (shared board per day),
+  `stages/{stage}/tasks/{uid}` (each person's checklist). Each doc:
+  `payload` (JSON text), `revision`, `mutationId`, `updatedAt`, `updatedBy`.
+- **Who can use it:** the `access/members` document, field `emails` (array
+  of lower-case addresses). Edit it in the Firebase console (Firestore →
+  access → members). Never put the addresses in the repo.
+- Emulator testing: `npx -y firebase-tools@latest emulators:start --only auth,firestore --project demo-edit1`,
+  seed `access/members` in the emulator, serve the repo and open
+  `http://localhost:8080/?emulators` with `firebase-config.js` swapped for a
+  `demo-edit1` config (Playwright route).
