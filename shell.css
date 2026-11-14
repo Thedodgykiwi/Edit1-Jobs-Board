@@ -125,3 +125,15 @@
 
 /* iPhone: if Safari still wraps an email in a link, keep it plain (issue #5) */
 .profile-who a, .profile-who a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+
+/* Suite cards (issue #6): flow down columns like a newspaper, each card only as
+   tall as its content. Same column counts as the board: 3, 2 below 1260px, 1 below 800px.
+   display: table + break-inside keeps Safari from splitting a card across columns
+   (inline-block also does, but then the columns don't balance). */
+.suite-grid { display: block !important; columns: 3; column-gap: 12px; }
+.suite-grid > * { display: table; table-layout: fixed; width: 100%; margin: 0 0 12px; break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid; }
+.suite-grid.compact-suites { column-gap: 7px; }
+.suite-grid.compact-suites > * { margin-bottom: 7px; }
+.suite-grid.suite-filter-empty { columns: 1; }
+@media (max-width: 1260px) { .suite-grid { columns: 2; } }
+@media (max-width: 800px) { .suite-grid { columns: 1; } }
