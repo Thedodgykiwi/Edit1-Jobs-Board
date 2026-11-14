@@ -137,3 +137,5 @@
 .suite-grid.suite-filter-empty { columns: 1; }
 @media (max-width: 1260px) { .suite-grid { columns: 2; } }
 @media (max-width: 800px) { .suite-grid { columns: 1; } }
+/* ...but not the "Nobody busy / free / assigned" message: keep its own centred layout (issue #7) */
+.suite-grid > .empty-state { display: grid; margin: 0; }
