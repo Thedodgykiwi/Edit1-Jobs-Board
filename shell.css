@@ -1,0 +1,45 @@
+/* Page shell around the board (board.css is the board's own look). */
+[hidden] { display: none !important; }
+
+/* Stage banner (shell.js): in the page flow, so it never covers the board's header */
+#stage-banner {
+  position: relative; z-index: 10; padding: .4rem 1rem;
+  display: flex; justify-content: center; align-items: center;
+  font-weight: 600; color: #fff; letter-spacing: .05em; font-size: .85rem;
+}
+.stage-dev     { background: #7048e8; }
+.stage-alpha   { background: #c2255c; }
+.stage-staging { background: #c25e00; }   /* darker than the icon orange so white text stays readable */
+.stage-local   { background: #495057; }
+#pipeline-link {
+  position: absolute; right: .6rem; top: 50%; transform: translateY(-50%);
+  color: #fff; text-decoration: none; font-size: .75rem; letter-spacing: .02em; font-weight: 600;
+  padding: .15rem .5rem; border-radius: 999px; background: rgba(0, 0, 0, .18);
+}
+#pipeline-link::after { content: " ↗"; }
+#pipeline-link:hover { background: rgba(0, 0, 0, .3); text-decoration: underline; }
+#pipeline-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Sign-in panel (cloud.js) */
+.gate {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1.5rem;
+  background: var(--bg);
+}
+#stage-banner:not([hidden]) ~ .gate { top: 2.1rem; }
+.gate-card {
+  width: min(24rem, 100%); padding: 2rem 1.5rem; text-align: center;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow);
+  display: grid; gap: 1rem; justify-items: center;
+}
+.gate-card h1 { margin: 0; font-size: 1.5rem; }
+.gate-card h1 span { color: var(--muted); font-weight: 500; }
+.gate-card p { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.gate-mark { pointer-events: none; }
+
+/* Signed-in account row at the top of Settings */
+.settings-account {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+  margin-bottom: 1rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 12px;
+  color: var(--muted); overflow-wrap: anywhere;
+}
+.settings-account strong { color: var(--text); }

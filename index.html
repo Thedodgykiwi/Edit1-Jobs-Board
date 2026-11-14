@@ -1,153 +1,813 @@
-<!DOCTYPE html>
-<html lang="en" data-accent="blue"><!-- the app's default accent colour: blue, purple, green, teal, orange or pink -->
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="format-detection" content="telephone=no, email=no, address=no" />
-  <title>Edit 1 Job Board</title>
-  <meta name="theme-color" content="#495057" />
-  <!-- Home-screen app: name, icons and colour. Files here say "Local"; the shared
-       deploy swaps in each stage's icons, name and colour (playbook pwa-icons.md). -->
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/app/local/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="icons/app/local/favicon-32.png" sizes="32x32" type="image/png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/app/local/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Edit 1 Local" />
-  <link rel="stylesheet" href="style.css" />
-  <!-- Libraries for the app's screens (vendor/, see vendor/README.md), imported by name -->
-  <script type="importmap">
-    {
-      "imports": {
-        "preact": "./vendor/preact.js",
-        "preact/hooks": "./vendor/preact-hooks.js",
-        "htm": "./vendor/htm.js",
-        "htm/preact": "./vendor/htm-preact.js",
-        "@preact/signals": "./vendor/signals.js",
-        "@preact/signals-core": "./vendor/signals-core.js"
-      }
-    }
-  </script>
-  <!-- Apply the saved theme and text size before the page draws (no flash). See menu.js. -->
-  <script>
-    try {
-      const p = JSON.parse(localStorage.getItem(`prefs:${location.pathname.split('/')[1] || 'app'}`) || '{}');
-      document.documentElement.dataset.theme = p.theme || 'auto';
-      document.documentElement.dataset.textSize = p.textSize || 'standard';
-      document.documentElement.dataset.accent = p.accent || document.documentElement.dataset.accent;
-    } catch { /* storage blocked: defaults */ }
-  </script>
-</head>
-<body>
-  <!-- Coloured stage banner (Dev, Alpha, Staging; LOCAL on your computer; none on Production)
-       so test versions can't be mistaken for the live app, with a link to the pipeline page. -->
-  <div id="stage-banner" hidden>
-    <span id="stage-name"></span>
-    <a id="pipeline-link" href="../pipeline/" hidden>Pipeline</a>
-  </div>
-  <!-- Offline strip (pwa.js): shown while there's no connection -->
-  <div id="offline-strip" class="offline-strip" role="status" hidden>You're offline. The app still works; anything that needs the internet will wait.</div>
-
-  <!-- App menu (menu.js), top-right: theme, Settings, version / What's new.
-       Google sign-in (account.js) adds your photo, name and Sign in / Sign out
-       once Firebase is set up (see firebase-config.js). -->
-  <div id="account" class="account">
-    <button type="button" id="sign-in" class="sign-in" hidden><span data-icon="google-logo"></span>Sign in</button>
-    <button type="button" id="account-btn" class="avatar-btn" aria-expanded="false" aria-controls="account-menu" aria-label="Menu" title="Menu">
-      <span class="avatar-wrap">
-        <img id="avatar-img" class="avatar" alt="" referrerpolicy="no-referrer" hidden>
-        <span id="avatar" class="avatar" aria-hidden="true"><span data-icon="user"></span></span>
-        <span id="sync-dot" class="sync-dot" aria-hidden="true" hidden></span>
-      </span>
-      <span id="avatar-label" class="avatar-label" aria-hidden="true">Menu</span>
-    </button>
-    <div id="account-menu" class="account-menu" hidden>
-      <div id="who" class="who" hidden>
-        <img id="who-img" class="avatar" alt="" referrerpolicy="no-referrer" hidden>
-        <span id="who-letter" class="avatar" aria-hidden="true"></span>
-        <p><strong id="account-name"></strong><span id="account-email"></span></p>
-      </div>
-      <p id="sync-status" class="sync-status" hidden></p>
-      <p class="menu-label" id="theme-label">Theme</p>
-      <div class="seg" role="radiogroup" aria-labelledby="theme-label" data-pref="theme">
-        <button type="button" role="radio" data-value="light"><span data-icon="sun"></span>Light</button>
-        <button type="button" role="radio" data-value="auto"><span data-icon="circle-half"></span>Auto</button>
-        <button type="button" role="radio" data-value="dark"><span data-icon="moon"></span>Dark</button>
-      </div>
-      <button type="button" id="open-settings" class="plain-btn"><span data-icon="gear-six"></span>Settings</button>
-      <button type="button" id="install-btn" class="plain-btn install-btn" hidden><span data-icon="device-mobile"></span><span id="install-label">Install app</span></button>
-      <button type="button" id="sign-out" class="plain-btn" hidden><span data-icon="sign-out"></span>Sign out</button>
-      <hr class="menu-sep">
-      <p id="offline-ready" class="offline-ready" hidden><span data-icon="check-circle"></span>Ready to use offline</p>
-      <button type="button" id="version-btn" class="version-btn">What's new</button>
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080a0d" />
+    <meta name="description" content="A day-focused editing shift board for Edit 1, suites 2–9 and the Millbank edit suites." />
+    <title>Edit 1 Job Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="board.css" />
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/app/local/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="icons/app/local/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/app/local/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Edit 1 Local" />
+  </head>
+  <body>
+    <!-- Coloured stage banner (Dev, Alpha, Staging; LOCAL on your computer; none on Production) -->
+    <div id="stage-banner" hidden>
+      <span id="stage-name"></span>
+      <a id="pipeline-link" href="../pipeline/" hidden>Pipeline</a>
     </div>
-  </div>
 
-  <!-- Settings panel (menu.js). Add the app's own settings here. -->
-  <dialog id="settings" class="sheet" aria-labelledby="settings-title">
-    <header><h2 id="settings-title">Settings</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
-    <section class="setting">
-      <p class="setting-name" id="accent-label">Accent colour</p>
-      <div class="swatches" role="radiogroup" aria-labelledby="accent-label" data-pref="accent">
-        <button type="button" role="radio" data-value="blue" style="--sw:#3b5bdb" aria-label="Blue" title="Blue"></button>
-        <button type="button" role="radio" data-value="purple" style="--sw:#7048e8" aria-label="Purple" title="Purple"></button>
-        <button type="button" role="radio" data-value="green" style="--sw:#237032" aria-label="Green" title="Green"></button>
-        <button type="button" role="radio" data-value="teal" style="--sw:#0b7285" aria-label="Teal" title="Teal"></button>
-        <button type="button" role="radio" data-value="orange" style="--sw:#c2410c" aria-label="Orange" title="Orange"></button>
-        <button type="button" role="radio" data-value="pink" style="--sw:#c2255c" aria-label="Pink" title="Pink"></button>
+    <!-- Sign-in panel (cloud.js): covers the board until someone on the access list signs in -->
+    <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="gate-card">
+        <div class="brand-mark gate-mark" aria-hidden="true"><span>E</span><strong>1</strong></div>
+        <h1 id="gate-title">Edit 1 <span>Job Board</span></h1>
+        <p id="gate-text">Loading…</p>
+        <button type="button" id="sign-in" class="button button-primary" hidden>Sign in with Google</button>
+        <button type="button" id="gate-sign-out" class="button button-ghost" hidden>Use a different account</button>
       </div>
-    </section>
-    <section class="setting">
-      <p class="setting-name" id="text-size-label">Text size</p>
-      <div class="seg" role="radiogroup" aria-labelledby="text-size-label" data-pref="textSize">
-        <button type="button" role="radio" data-value="standard">Standard</button>
-        <button type="button" role="radio" data-value="large">Large</button>
+    </div>
+
+    <!-- Account details used by account.js (sign-in state); shown inside the board's Settings -->
+    <div id="account" hidden>
+      <button type="button" id="account-btn"></button><span id="avatar-label"></span>
+      <span id="avatar"></span><img id="avatar-img" alt="" hidden><span id="sync-dot" hidden></span>
+      <div id="who" hidden><img id="who-img" alt="" hidden><span id="who-letter"></span><strong id="account-name"></strong><span id="account-email"></span></div>
+      <p id="sync-status" hidden></p>
+    </div>
+    <div id="syncBar" class="sync-bar" role="status"><span id="syncText">Loading shared board…</span><button id="syncRetry" type="button" hidden>Retry</button><button id="syncReload" type="button" hidden>Load shared board</button></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <button class="brand-mark" id="daySheetButton" type="button" aria-label="Open Day Sheet" aria-keyshortcuts="D" title="Day Sheet (D)"><span>E</span><strong>1</strong></button>
+          <div class="brand-title-row">
+            <h1>Edit 1 <span>Job Board</span></h1>
+            <button class="supervisor-todo-button" id="todoButton" type="button" aria-label="Open current tasks" aria-keyshortcuts="C" title="Current tasks (C) · Full checklist (T)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7" /></svg>
+              <span class="todo-count" id="todoCount" hidden>0</span>
+            </button>
+            <button class="supervisor-todo-button wheel-launch-button" id="wheelButton" type="button" aria-label="Spin that wheel" aria-keyshortcuts="W" title="Spin that wheel (W)" aria-haspopup="dialog">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7m0 4v7M3 12h7m4 0h7M5.6 5.6l5 5m2.8 2.8 5 5M5.6 18.4l5-5m2.8-2.8 5-5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="date-block">
+            <span id="shiftDate">Today</span>
+            <strong id="liveClock">--:--</strong>
+          </div>
+          <div class="live-badge" id="dayScopeBadge"><i></i> Today</div>
+          <button class="button button-primary" id="newJobButton" type="button" aria-label="New job" aria-keyshortcuts="N" title="New job (N)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            New job
+          </button>
+          <button class="theme-button" id="themeButton" type="button" aria-label="Theme: Auto" title="Theme: Auto">
+            <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H4zM8 21h8M12 17v4" /></svg>
+            <span id="themeMode">Auto</span>
+          </button>
+          <button class="icon-button" id="settingsButton" type="button" aria-label="Board settings" title="Board settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.6v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.2 15a1.7 1.7 0 0 0-1.3-1H3v-4h-.1a1.7 1.7 0 0 0 1.3-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.66 4.2l.06.06A1.7 1.7 0 0 0 8.6 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19 9a1.7 1.7 0 0 0 1.1 1H21v4h-.9a1.7 1.7 0 0 0-.7 1Z" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <nav class="date-navigator" aria-label="Choose board date">
+          <button class="date-step-button" id="previousDayButton" type="button" aria-label="Previous day" title="Previous day">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+          <div class="date-picker-control">
+            <button class="date-pulse-button" id="dayPulseButton" type="button" aria-label="Show daily activity summary" title="Day pulse">
+              <span id="boardDateKicker">Today</span>
+              <strong id="boardDateLabel">Thu, 10 Sep 2026</strong>
+            </button>
+            <label class="date-picker-icon" for="boardDateInput" aria-label="Jump to a specific date" title="Choose date">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v3M18 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" /></svg>
+              <input id="boardDateInput" type="date" aria-label="Jump to a specific date" />
+            </label>
+          </div>
+          </label>
+          <button class="date-step-button" id="nextDayButton" type="button" aria-label="Next day" title="Next day">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+          <button class="today-button" id="todayButton" type="button" hidden>Today</button>
+          <button class="button button-ghost history-search-launch" id="historySearchButton" type="button" aria-haspopup="dialog" aria-keyshortcuts="S" title="Search history (S)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Search history</span></button>
+        </nav>
+        <nav class="summary-strip" id="summaryStrip" aria-label="Live shift summary"></nav>
+
+        <section class="workflow-column incoming-column collapsible-section collapsed" id="poolSection" aria-labelledby="poolTitle">
+          <div class="column-heading">
+            <div>
+              <p class="eyebrow">Incoming / planned</p>
+              <div class="queue-title-line">
+                <h2 id="poolTitle">Job Queue <span class="count-badge" id="poolCount">0</span></h2>
+                <label class="queue-compact-toggle" title="Use compact Job Queue cards">
+                  <input id="compactQueueQuickToggle" type="checkbox" />
+                  <span class="compact-switch" aria-hidden="true"></span>
+                  <span class="queue-compact-label">Compact cards</span>
+                </label>
+              </div>
+            </div>
+            <div class="section-heading-actions section-heading-actions-right">
+              <button class="collapse-button" id="poolCollapseButton" type="button" aria-expanded="false" aria-controls="jobPoolContent" aria-keyshortcuts="J">
+                <span>Show jobs</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </div>
+          </div>
+          <div class="collapsible-content" id="jobPoolContent">
+            <div class="job-list" id="plannedJobs"></div>
+          </div>
+        </section>
+
+        <section class="operations" aria-labelledby="operationsTitle">
+          <div class="section-heading">
+            <button class="suite-filter-heading filter-all" id="suiteFilterButton" type="button" aria-label="Showing all suites. Tap to show free suites" aria-keyshortcuts="F">
+              <span class="eyebrow" id="suiteFilterEyebrow">Tap title to filter · All</span>
+              <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors &amp; suites</span>
+            </button>
+            <div class="editor-view-actions">
+              <button class="collapse-button" id="queueVisibilityButton" type="button" aria-controls="poolSection" aria-expanded="true" aria-keyshortcuts="E" title="Hide Job Queue card (E)">Hide queue</button>
+            <button class="collapse-button" id="editorsCollapseButton" type="button" aria-expanded="false" aria-controls="editorsPanel">
+              <span>Show editors</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            </div>
+          </div>
+
+          <div class="editors-panel collapsed-content" id="editorsPanel">
+            <div class="editor-radar" id="editorRadar" aria-label="Daily editor assignments"></div>
+            <form class="inline-editor-add" id="addEditorForm">
+              <input id="newEditorName" name="name" required maxlength="50" placeholder="Editor name" autocomplete="off" aria-label="New editor name" />
+              <select id="newEditorSuite" name="suite" aria-label="Assign new editor to a suite"></select>
+              <button class="button button-primary" type="submit">Add</button>
+            </form>
+          </div>
+          <div class="suite-grid" id="suiteGrid" aria-live="polite"></div>
+        </section>
+
+        <section class="workflow-column completed-column collapsible-section collapsed" id="completedSection" aria-labelledby="completedTitle">
+          <div class="column-heading">
+            <div>
+              <p class="eyebrow">Signed off this day</p>
+              <h2 id="completedTitle">Completed <span class="count-badge count-badge-muted" id="completedCount">0</span></h2>
+            </div>
+            <button class="collapse-button" id="completedCollapseButton" type="button" aria-expanded="false" aria-controls="completedContent">
+              <span>Show completed</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+          </div>
+          <div class="collapsible-content" id="completedContent">
+            <div class="completion-filters" aria-label="Filter completed jobs">
+              <label>
+                <span>Job type</span>
+                <select id="completedTypeFilter"><option value="">All types</option></select>
+              </label>
+              <label>
+                <span>Editor</span>
+                <select id="completedEditorFilter"><option value="">All editors</option></select>
+              </label>
+              <label>
+                <span>Edit suite</span>
+                <select id="completedSuiteFilter"><option value="">All suites</option></select>
+              </label>
+            </div>
+            <div class="completed-list" id="completedJobs"></div>
+          </div>
+        </section>
+
+        <section class="workflow-column biffed-column collapsible-section collapsed" id="biffedSection" aria-labelledby="biffedTitle">
+          <div class="column-heading">
+            <div>
+              <p class="eyebrow">Removed from the running order</p>
+              <h2 id="biffedTitle">Biffed <span class="count-badge count-badge-biffed" id="biffedCount">0</span></h2>
+            </div>
+            <button class="collapse-button" id="biffedCollapseButton" type="button" aria-expanded="false" aria-controls="biffedContent">
+              <span>Show biffed</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+          </div>
+          <div class="collapsible-content" id="biffedContent">
+            <div class="biffed-list" id="biffedJobs"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="job-dialog" id="jobDialog">
+      <form id="jobForm" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Add to selected day</p>
+            <h2>New editing job</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="jobDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <div class="job-form-scroll">
+        <label class="field field-wide">
+          <span>Job title</span>
+          <input id="jobTitle" name="title" required maxlength="80" placeholder="e.g. Chancellor interview highlights" autocomplete="off" />
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Work category</span>
+            <select id="jobWorkType" name="workType">
+              <option>On the day</option>
+              <option>Booking</option>
+              <option>Special</option>
+              <option>Breaking</option>
+              <option>Edit 1 admin</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Priority</span>
+            <select id="jobPriority" name="priority">
+              <option value="low">Low</option>
+              <option value="standard" selected>Standard</option>
+              <option value="urgent">Urgent</option>
+              <option value="top">Top Priority</option>
+              <option value="off-rota">Off Rota</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-row edit-format-row">
+          <label class="field">
+            <span>Edit format</span>
+            <select id="jobType" name="type">
+              <option>Digital Edit</option>
+              <option>TV Package</option>
+              <option>Digi / TV / YouTube</option>
+              <option value="Olay &amp; Openers">Grabs / Olay / Openers</option>
+              <option>Interview</option>
+              <option>As Live</option>
+              <option>For Graphics</option>
+              <option>Voice / Translation</option>
+              <option>QC Fixes</option>
+              <option>Documentary</option>
+              <option>Other Exports</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Due <small>optional</small></span>
+            <div class="due-field"><input id="jobDue" name="due" type="time" /><button class="due-clear-button" type="button" data-clear-due="jobDue">No due time</button></div>
+          </label>
+        </div>
+
+        <label class="field field-wide">
+          <span>Pre-assign editor</span>
+          <select id="jobEditor" name="editor"></select>
+        </label>
+
+        <label class="field field-wide">
+          <span>Reporter / producer <small>optional</small></span>
+          <input id="jobContact" name="contact" maxlength="70" placeholder="Name or team" autocomplete="off" />
+        </label>
+
+        <label class="field field-wide">
+          <span>Brief note <small>optional</small></span>
+          <textarea id="jobNote" name="note" rows="3" maxlength="160" placeholder="Delivery, duration or key requirement"></textarea>
+        </label>
+        </div>
+
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="jobDialog" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Add to Job Queue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="job-dialog fast-track-dialog" id="fastTrackDialog">
+      <form id="fastTrackForm" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Direct to selected suite</p>
+            <h2>Fast Track job</h2>
+            <p class="dialog-intro" id="fastTrackSuiteSummary"></p>
+          </div>
+          <button class="icon-button" data-close-dialog="fastTrackDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <label class="field field-wide">
+          <span>Job name</span>
+          <input id="fastTrackTitle" name="title" required maxlength="80" placeholder="e.g. Quick picture fix" autocomplete="off" autofocus />
+        </label>
+
+        <div class="field-row edit-format-row" id="fastTrackFormatRow">
+          <label class="field">
+            <span>Work category</span>
+            <select id="fastTrackWorkType" name="workType">
+              <option>On the day</option>
+              <option>Booking</option>
+              <option>Special</option>
+              <option>Breaking</option>
+              <option>Edit 1 admin</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Edit format</span>
+            <select id="fastTrackType" name="type">
+              <option>Digital Edit</option>
+              <option>TV Package</option>
+              <option>Digi / TV / YouTube</option>
+              <option value="Olay &amp; Openers">Grabs / Olay / Openers</option>
+              <option>Interview</option>
+              <option>As Live</option>
+              <option>For Graphics</option>
+              <option>Voice / Translation</option>
+              <option>QC Fixes</option>
+              <option>Documentary</option>
+              <option>Other Exports</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field field-wide">
+          <span>Brief note <small>optional</small></span>
+          <textarea id="fastTrackNote" name="note" rows="2" maxlength="160" placeholder="Any useful detail"></textarea>
+        </label>
+
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="fastTrackDialog" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Start job</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="job-dialog" id="editJobDialog">
+      <form id="editJobForm" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Incoming / parked work</p>
+            <h2>Edit job</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="editJobDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <label class="field field-wide">
+          <span>Job title</span>
+          <input id="editJobTitle" name="title" required maxlength="80" autocomplete="off" />
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Work category</span>
+            <select id="editJobWorkType" name="workType">
+              <option>On the day</option>
+              <option>Booking</option>
+              <option>Special</option>
+              <option>Breaking</option>
+              <option>Edit 1 admin</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Priority</span>
+            <select id="editJobPriority" name="priority">
+              <option value="low">Low</option>
+              <option value="standard" selected>Standard</option>
+              <option value="urgent">Urgent</option>
+              <option value="top">Top Priority</option>
+              <option value="off-rota">Off Rota</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-row edit-format-row">
+          <label class="field">
+            <span>Edit format</span>
+            <select id="editJobType" name="type">
+              <option>Digital Edit</option>
+              <option>TV Package</option>
+              <option>Digi / TV / YouTube</option>
+              <option value="Olay &amp; Openers">Grabs / Olay / Openers</option>
+              <option>Interview</option>
+              <option>As Live</option>
+              <option>For Graphics</option>
+              <option>Voice / Translation</option>
+              <option>QC Fixes</option>
+              <option>Documentary</option>
+              <option>Other Exports</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>TX time <small>optional</small></span>
+            <div class="due-field"><input id="editJobDue" name="due" type="time" /><button class="due-clear-button" type="button" data-clear-due="editJobDue">No due time</button></div>
+          </label>
+        </div>
+
+        <label class="field field-wide">
+          <span>Assigned editor</span>
+          <select id="editJobEditor" name="editor"></select>
+        </label>
+
+        <label class="field field-wide">
+          <span>Reporter / producer <small>optional</small></span>
+          <input id="editJobContact" name="contact" maxlength="70" placeholder="Name or team" autocomplete="off" />
+        </label>
+
+        <label class="field field-wide">
+          <span>Brief note <small>optional</small></span>
+          <textarea id="editJobNote" name="note" rows="3" maxlength="160" placeholder="Delivery, duration or key requirement"></textarea>
+        </label>
+
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="editJobDialog" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="job-dialog detail-dialog" id="detailDialog">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="detailEyebrow">Live detail</p>
+            <h2 id="detailTitle">Shift status</h2>
+          </div>
+          <div class="dialog-heading-actions">
+            <button class="icon-button detail-add-job" id="detailAddJobButton" type="button" aria-label="Add a new job" title="Add a new job" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            </button>
+            <button class="icon-button" data-close-dialog="detailDialog" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
+        </div>
+        <div class="detail-list" id="detailList"></div>
       </div>
-    </section>
-      <p id="styleguide-link" class="setting-foot" hidden><a href="styleguide.html">Style guide</a> (building blocks for this app; not shown on Production)</p>
-  </dialog>
+    </dialog>
 
-  <!-- What's new panel (menu.js): this stage's release notes from releases.json, made by the deploy. -->
-  <dialog id="whats-new" class="sheet" aria-labelledby="whats-new-title">
-    <header><h2 id="whats-new-title">What's new</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
-    <div id="whats-new-body"></div>
-  </dialog>
+    <dialog class="job-dialog handover-dialog" id="handoverDialog" aria-labelledby="handoverDialogTitle">
+      <form id="handoverForm" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Night shift handover</p>
+            <h2 id="handoverDialogTitle">Create handover</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="handoverDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <div class="handover-content">
+          <section class="handover-section">
+            <div class="handover-section-heading"><h3>Editors</h3><span>Select who remains</span></div>
+            <div class="handover-check-list" id="handoverEditors"></div>
+          </section>
+          <section class="handover-section">
+            <div class="handover-section-heading"><h3>Running jobs</h3><span>Added from the board</span></div>
+            <div class="handover-static-list" id="handoverRunningJobs"></div>
+          </section>
+          <section class="handover-section">
+            <div class="handover-section-heading"><h3>Coming-up jobs</h3><span>Choose from the queue</span></div>
+            <div class="handover-check-list" id="handoverQueueJobs"></div>
+            <div class="handover-manual-row">
+              <input id="handoverManualJob" type="text" maxlength="120" placeholder="Add a coming-up job" />
+              <button class="button button-ghost" id="addHandoverJobButton" type="button">Add</button>
+            </div>
+            <div class="handover-manual-list" id="handoverManualJobs"></div>
+          </section>
+          <section class="handover-section">
+            <div class="handover-section-heading"><h3>Notes</h3><span>Press Enter for a new bullet</span></div>
+            <ul class="handover-notes-editor" id="handoverNotes" contenteditable="true" role="textbox" aria-label="Handover notes" aria-multiline="true"><li><br /></li></ul>
+          </section>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="handoverDialog" type="button">Cancel</button>
+          <button class="button button-primary" id="createHandoverPdfButton" type="submit">Create PDF</button>
+        </div>
+      </form>
+    </dialog>
 
-  <!-- The app's screens: drawn by app/main.js (Preact components). -->
-  <main id="app" aria-label="Edit 1 Job Board"></main>
+    <dialog class="job-dialog todo-dialog" id="todoDialog" aria-labelledby="todoDialogTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="todoDialogDate">Edit 1 · Today</p>
+            <h2 id="todoDialogTitle" tabindex="-1">Current tasks</h2>
+          </div>
+          <div class="dialog-heading-actions todo-view-actions">
+            <button class="button button-ghost" id="todoViewButton" type="button" aria-controls="todoForm" aria-expanded="false">Add task</button>
+          <button class="icon-button" data-close-dialog="todoDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+          </div>
+        </div>
+        <form class="todo-entry" id="todoForm">
+          <div class="field">
+            <div class="todo-title-line"><label for="todoTitle">Task</label><label class="todo-note-toggle"><input id="todoIsNote" name="isNote" type="checkbox" />Note</label></div>
+            <input id="todoTitle" name="title" maxlength="120" placeholder="What do you need to remember?" autocomplete="off" />
+          </div>
+          <label class="field">
+            <span>Brief note <small>optional · or bulk tasks</small></span>
+            <textarea id="todoNote" name="note" maxlength="600" rows="2" placeholder="Any useful detail — or: - task *"></textarea>
+          </label>
+          <button class="button button-primary" id="todoSubmitButton" type="submit">Add task</button>
+        </form>
+        <div class="todo-content">
+          <div class="todo-list" id="todoList" aria-live="polite"></div>
+          <details class="todo-completed" id="todoCompletedSection">
+            <summary>Completed <span id="todoCompletedCount">0</span></summary>
+            <div class="todo-list" id="todoCompletedList"></div>
+          </details>
+        </div>
+      </div>
+    </dialog>
 
-  <!-- iPhone/iPad: how to add the app to the Home Screen (pwa.js; Safari can't install from a button) -->
-  <dialog id="ios-install" class="sheet" aria-labelledby="ios-install-title">
-    <header><h2 id="ios-install-title">Add to Home Screen</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
-    <ol class="steps">
-      <li>Tap Safari's <b>Share</b> button <span data-icon="export"></span> (beside the address bar, or inside the <b>⋯</b> menu).</li>
-      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
-      <li>Tap <b>Add</b>. The app's icon appears on your Home Screen.</li>
-    </ol>
-    <p class="muted">Open it from that icon for the full-screen app; it works offline too.</p>
-  </dialog>
+    <dialog class="job-dialog todo-edit-dialog" id="todoEditDialog" aria-labelledby="todoEditDialogTitle">
+      <form id="todoEditForm">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="todoEditDate">Edit task</p>
+            <h2 id="todoEditDialogTitle">Task details</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="todoEditDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <div class="field">
+          <div class="todo-title-line"><label for="todoEditTitle">Title</label><label class="todo-note-toggle"><input id="todoEditIsNote" name="isNote" type="checkbox" />Note</label></div>
+          <input id="todoEditTitle" name="title" required maxlength="120" autocomplete="off" />
+        </div>
+        <label class="field">
+          <span>Brief note <small>optional</small></span>
+          <textarea id="todoEditNote" name="note" maxlength="600" rows="3" placeholder="Add any useful detail"></textarea>
+        </label>
+        <label class="field">
+          <span>Reminder <small>optional</small></span>
+          <span class="due-field">
+            <input id="todoEditReminder" name="reminder" type="time" />
+            <button class="due-clear-button" id="clearTodoReminder" type="button">No reminder</button>
+          </span>
+        </label>
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="todoEditDialog" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </dialog>
 
-  <!-- One-time install tip (pwa.js): from the 2nd visit on, until installed or dismissed -->
-  <div id="install-tip" class="install-tip" role="region" aria-label="Install tip" hidden>
-    <p><b>Use it like an app</b><span id="install-tip-text">Install it to open it from your home screen, even offline.</span></p>
-    <button type="button" id="install-tip-go" class="install-tip-go">Install</button>
-    <button type="button" id="install-tip-x" class="install-tip-x" aria-label="Don't show this again"><span data-icon="x"></span></button>
-  </div>
+    <dialog class="job-dialog confirm-dialog todo-reminder-dialog" id="todoReminderDialog" aria-labelledby="todoReminderDialogTitle" aria-describedby="todoReminderNote">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="todoReminderTime">Task reminder</p>
+            <h2 id="todoReminderDialogTitle">Time for this task</h2>
+          </div>
+          <button class="icon-button" id="dismissTodoReminderIcon" type="button" aria-label="Dismiss reminder">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <p class="todo-reminder-task" id="todoReminderTask"></p>
+        <p class="confirm-copy" id="todoReminderNote"></p>
+        <div class="dialog-actions">
+          <button class="button button-ghost" id="dismissTodoReminder" type="button">Dismiss</button>
+          <button class="button button-complete" id="completeTodoReminder" type="button">Complete task</button>
+        </div>
+      </div>
+    </dialog>
 
-  <!-- "New version ready" bar (pwa.js) -->
-  <div id="update-bar" class="update-bar" role="status" hidden>
-    <span>A new version is ready.</span><button type="button" id="update-reload">Reload</button>
-  </div>
+    <dialog class="job-dialog settings-dialog" id="settingsDialog" aria-labelledby="settingsDialogTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Board display</p>
+            <h2 id="settingsDialogTitle">Settings</h2>
+          </div>
+          <div class="dialog-heading-actions"><button class="release-notes-link" id="releaseNotesButton" type="button">v1.46.5 · Release notes</button><button class="icon-button" data-close-dialog="settingsDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button></div>
+        </div>
+        <div class="settings-account">
+          <span>Signed in as <strong id="settings-account-email"></strong></span>
+          <button type="button" id="sign-out" class="button button-ghost">Sign out</button>
+        </div>
+        <div class="settings-list">
+          <label class="settings-option">
+            <strong>Compact suite cards</strong>
+            <input id="compactSuites" type="checkbox" />
+            <small>Reduces suite spacing so more of the live floor fits on screen.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Show Job Queue card</strong>
+            <input id="showJobQueueCard" type="checkbox" aria-describedby="showJobQueueCardHelp" />
+            <small id="showJobQueueCardHelp">Shows Incoming / planned on the main page. Remembers your choice when reopening. Press E to toggle; Q still opens the Queue window.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Compact Job Queue cards</strong>
+            <input id="compactQueueCards" type="checkbox" />
+            <small>Keeps essential queue details while hiding notes, edit format and editor assignment controls.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Empty-suite presentation</strong>
+            <select id="emptySuitePresentation">
+              <option value="full">Full cards</option>
+              <option value="condensed">Condensed rows</option>
+              <option value="hidden">Hidden</option>
+            </select>
+            <small>Controls empty suites marked Unused; operational suite states remain visible.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Sections on opening</strong>
+            <select id="sectionStartup">
+              <option value="remember">Remember last view</option>
+              <option value="collapsed">All collapsed</option>
+              <option value="queue">Job Queue open</option>
+              <option value="expanded">All expanded</option>
+            </select>
+            <small>Sets which main sections are expanded when the board is opened.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Job Queue sorting</strong>
+            <select id="queueSort">
+              <option value="priority">Priority, then due time</option>
+              <option value="due">Due time</option>
+              <option value="type">Job type</option>
+              <option value="added">Newest added</option>
+            </select>
+            <small>Controls the order of incoming and parked jobs in the queue.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Due-time warning</strong>
+            <select id="dueWarningMinutes">
+              <option value="0">Off</option>
+              <option value="15">Within 15 minutes</option>
+              <option value="30">Within 30 minutes</option>
+              <option value="60">Within 60 minutes</option>
+            </select>
+            <small>Shows a countdown near approaching deadlines; overdue jobs remain red.</small>
+          </label>
+          <div class="settings-option">
+            <strong>Queue metadata</strong>
+            <button class="settings-choice-button" id="queueMetadataButton" type="button" aria-haspopup="dialog">
+              <span id="queueMetadataSummary">5 shown</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+            <small>Chooses which planning details are visible on Job Queue cards.</small>
+          </div>
+          <label class="settings-option">
+            <strong>Hide empty archive sections</strong>
+            <input id="hideEmptyArchives" type="checkbox" />
+            <small>Removes Completed and Biffed sections when their count is zero.</small>
+          </label>
+          <label class="settings-option">
+            <strong>Confirm job actions</strong>
+            <input id="confirmJobActions" type="checkbox" />
+            <small>Asks before parking, completing or returning a job to the queue.</small>
+          </label>
+        </div>
+      </div>
+    </dialog>
 
-  <script src="stage.js"></script>
-  <script src="icons.js"></script>
-  <script src="toast.js"></script>
-  <script src="error-screen.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="menu.js"></script>
-  <script src="pwa.js"></script>
-  <script src="app.js"></script>
-  <script type="module" src="account.js"></script>
-  <script type="module" src="app/main.js"></script>
-</body>
+    <dialog class="job-dialog metadata-dialog" id="queueMetadataDialog" aria-labelledby="queueMetadataDialogTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Queue cards</p>
+            <h2 id="queueMetadataDialogTitle">Visible metadata</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="queueMetadataDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <div class="metadata-picker-list">
+          <label class="metadata-option"><strong>Priority</strong><input data-queue-metadata="priority" type="checkbox" /></label>
+          <label class="metadata-option"><strong>Reporter / producer</strong><input data-queue-metadata="reporter" type="checkbox" /></label>
+          <label class="metadata-option"><strong>Brief notes</strong><input data-queue-metadata="notes" type="checkbox" /></label>
+          <label class="metadata-option"><strong>Work type</strong><input data-queue-metadata="workType" type="checkbox" /></label>
+          <label class="metadata-option"><strong>Edit format</strong><input data-queue-metadata="editFormat" type="checkbox" /></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-primary" data-close-dialog="queueMetadataDialog" type="button">Done</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="job-dialog day-sheet-dialog" id="daySheetDialog" aria-labelledby="daySheetDialogTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="daySheetDate">Daily agenda</p>
+            <h2 id="daySheetDialogTitle">Day Sheet</h2>
+          </div>
+          <div class="dialog-heading-actions">
+            <button class="icon-button" id="editDaySheetButton" type="button" aria-label="Edit Day Sheet" title="Edit Day Sheet">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1zM14.5 6.8l2.7 2.7" /></svg>
+            </button>
+            <button class="icon-button" data-close-dialog="daySheetDialog" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
+        </div>
+        <p class="day-sheet-intro" id="daySheetIntro">Today’s newsroom agenda and planned output.</p>
+        <div class="day-sheet-view" id="daySheetView"></div>
+        <div class="day-sheet-toolbar" id="daySheetToolbar" role="toolbar" aria-label="Day Sheet formatting" hidden>
+          <button type="button" data-day-sheet-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
+          <button type="button" data-day-sheet-command="heading" aria-label="Heading" title="Heading">H</button>
+          <button type="button" data-day-sheet-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+          </button>
+          <button type="button" data-day-sheet-command="removeFormat" aria-label="Clear formatting" title="Clear formatting">Tx</button>
+        </div>
+        <div class="day-sheet-editor" id="daySheetEditor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Paste today’s Day Sheet here…" hidden></div>
+        <div class="dialog-actions">
+          <button class="button button-ghost" id="closeDaySheetButton" data-close-dialog="daySheetDialog" type="button">Close</button>
+          <button class="button button-primary" id="saveDaySheetButton" type="button" hidden>Save &amp; close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="job-dialog confirm-dialog" id="actionConfirmDialog" aria-labelledby="actionConfirmTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow" id="actionConfirmEyebrow">Confirm action</p>
+            <h2 id="actionConfirmTitle">Confirm this action?</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="actionConfirmDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <p class="confirm-copy"><strong id="actionConfirmJobName"></strong><span id="actionConfirmMessage"></span></p>
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="actionConfirmDialog" type="button">No</button>
+          <button class="button" id="actionConfirmButton" type="button">Yes</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="job-dialog confirm-dialog" id="biffDialog" aria-labelledby="biffDialogTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Confirm removal</p>
+            <h2 id="biffDialogTitle">Has this job been Biffed?</h2>
+          </div>
+          <button class="icon-button" data-close-dialog="biffDialog" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <p class="confirm-copy"><strong id="biffJobName"></strong> will move out of the live workflow and into Biffed.</p>
+        <div class="dialog-actions">
+          <button class="button button-ghost" data-close-dialog="biffDialog" type="button">No</button>
+          <button class="button button-biff-confirm" id="biffConfirmButton" type="button">Yes</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="wheelDialog" class="wheel-dialog" aria-labelledby="wheelTitle">
+      <div class="wheel-heading"><h2 id="wheelTitle">Spin that wheel</h2><button class="icon-button" data-close-dialog="wheelDialog" type="button" aria-label="Close wheel">✕</button></div>
+      <div class="wheel-stage"><span class="wheel-pointer" aria-hidden="true"></span><div class="wheel-rotor"><svg id="editorWheel" viewBox="0 0 600 600" role="img" aria-label="Free editors and joke segments"></svg></div><span class="wheel-hub" aria-hidden="true"><span>Edit<br>one</span></span></div>
+      <div class="wheel-footer"><p id="wheelResult" role="status" aria-live="polite"></p><button id="wheelSpinButton" class="button button-primary" type="button">Spin that wheel</button></div>
+    </dialog>
+
+    <dialog class="job-dialog history-search-dialog" id="historySearchDialog" aria-labelledby="historySearchTitle">
+      <div class="dialog-panel">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Across all saved days</p><h2 id="historySearchTitle">Search history</h2></div>
+          <div class="dialog-heading-actions"><button class="button button-ghost" id="historySearchBack" type="button" hidden>Back to results</button><button class="icon-button" data-close-dialog="historySearchDialog" type="button" aria-label="Close search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
+        </div>
+        <div id="historySearchListView" class="history-search-list-view">
+          <form id="historySearchFilters" class="history-search-filters" role="search" aria-label="Search saved jobs">
+            <label class="field history-search-query"><span>Job title</span><input id="historySearchQuery" type="search" maxlength="200" placeholder="Search job titles…" autocomplete="off" /></label>
+            <label class="field"><span>Editor</span><select id="historySearchEditor"><option value="">All editors</option></select></label>
+            <label class="field"><span>Edit suite</span><select id="historySearchSuite"><option value="">All suites</option></select></label>
+          </form>
+          <div class="history-search-summary"><p id="historySearchStatus" role="status" aria-live="polite"></p><button class="button button-ghost" id="historySearchClear" type="button">Clear filters</button></div>
+          <p class="history-search-help">Filter by editor or suite to browse their jobs, or combine filters with a title search. Editor and suite lists narrow each other using recorded assignments.</p>
+          <div id="historySearchResults" class="history-search-results" aria-busy="false"></div>
+          <button class="button button-ghost" id="historySearchMore" type="button" hidden>Load more jobs</button>
+          <button class="button button-ghost" id="historySearchRetry" type="button" hidden>Retry search</button>
+        </div>
+        <div id="historySearchDetailView" class="history-search-detail" hidden tabindex="-1"></div>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="stage.js"></script>
+    <script src="shell.js"></script>
+    <script src="firebase-config.js"></script>
+    <script type="module" src="account.js"></script>
+    <script type="module" src="cloud.js"></script>
+    <script defer src="board.js"></script>
+  </body>
 </html>
