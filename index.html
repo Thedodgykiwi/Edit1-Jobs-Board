@@ -790,17 +790,17 @@
       <div class="dialog-panel">
         <div class="dialog-heading">
           <div>
-            <p class="eyebrow">Confirm removal</p>
-            <h2 id="biffDialogTitle">Has this job been Biffed?</h2>
+            <p class="eyebrow">Biff job</p>
+            <h2 id="biffDialogTitle">Biff this job?</h2>
           </div>
           <button class="icon-button" data-close-dialog="biffDialog" type="button" aria-label="Close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </div>
-        <p class="confirm-copy"><strong id="biffJobName"></strong> will move out of the live workflow and into Biffed.</p>
+        <p class="confirm-copy"><strong id="biffJobName"></strong> moves out of the running order into Biffed. You can undo it for a few seconds afterwards.</p>
         <div class="dialog-actions">
-          <button class="button button-ghost" data-close-dialog="biffDialog" type="button">No</button>
-          <button class="button button-biff-confirm" id="biffConfirmButton" type="button">Yes</button>
+          <button class="button button-ghost" id="biffKeepButton" data-close-dialog="biffDialog" type="button">Keep job</button>
+          <button class="button button-biff-confirm" id="biffConfirmButton" type="button">Biff job</button>
         </div>
       </div>
     </dialog>

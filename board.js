@@ -2456,8 +2456,12 @@
     const job = state.jobs.find((item) => item.id === jobId && ["planned", "parked", "queued", "active"].includes(item.status));
     if (!job) return;
     biffingJobId = job.id;
+    // Issue #13: like Complete / Pause / Return, Biff only asks when "Confirm job
+    // actions" is on; otherwise it happens straight away and the Undo bar follows.
+    if (!uiState.confirmJobActions) return confirmBiffJob();
     document.getElementById("biffJobName").textContent = job.title;
     biffDialog.showModal();
+    document.getElementById("biffKeepButton").focus();   // the safe choice, not the close button
   }
 
   function confirmBiffJob() {

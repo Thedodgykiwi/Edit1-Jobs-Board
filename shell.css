@@ -176,3 +176,9 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
 .undo-countdown { height: 3px; background: #74c0fc; transform-origin: left; animation: undo-countdown 8s linear forwards; }
 @keyframes undo-countdown { to { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .undo-countdown { animation: none; } }
+
+/* Biff dialog (issue #13, only when "Confirm job actions" is on): full-width buttons on phones */
+@media (max-width: 600px) {
+  #biffDialog .dialog-actions { display: flex; flex-direction: column-reverse; gap: .6rem; }
+  #biffDialog .dialog-actions .button { width: 100%; min-height: 2.8rem; }
+}
