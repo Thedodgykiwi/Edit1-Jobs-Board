@@ -122,6 +122,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 - History search runs in the browser over all saved days (`cloud.js`
   `search`/`facets`, a port of the old SQL in the reference zip).
 - Display settings stay per device (localStorage); unsaved-draft keys are per stage.
+- Undo (issue #12): Complete, Pause, Biff and Return show an 8-second Undo bar (board.js `offerUndo`). Undo restores the whole day's board from just before the action, and refuses if the board changed from the cloud in between (`remoteBoardChanges`).
 - Offline + install + "new version ready" bar (issue #8): `pwa.js` / `sw.js` from the starter. Offline, `cloud.js` falls back to the copy saved on the device (read-only in practice: saves need a connection), and the board's sync line is hidden behind the offline strip.
 - Browser storage is shared by all stages and apps on `thedodgykiwi.github.io`: key it per app and stage.
 

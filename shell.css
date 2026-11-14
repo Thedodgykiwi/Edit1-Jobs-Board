@@ -161,3 +161,18 @@ html[data-theme="dark"] .offline-strip { background: #3d2a12; color: #ffc078; bo
 html[data-theme="dark"] .update-bar { color: #032b30; }
 .update-bar button { background: var(--panel); color: var(--text); font-weight: 700; padding: .35rem .8rem; }
 body.is-offline #syncBar { display: none; }   /* the offline strip explains instead of "Up to date" */
+
+/* Undo bar (board.js, issue #12): after Complete, Pause, Biff or Return; 8-second countdown */
+.undo-bar {
+  position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 55;
+  width: min(420px, calc(100vw - 1.5rem)); border-radius: 12px; overflow: hidden;
+  background: #1d1f23; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.35); font-size: .88rem; font-weight: 600;
+}
+.undo-row { display: flex; align-items: center; gap: .8rem; padding: .75rem .9rem; }
+.undo-message { flex: 1; min-width: 0; }
+.undo-button { flex: none; border: 0; border-radius: 8px; background: #74c0fc; color: #04213d; font: inherit; font-weight: 700; padding: .45rem .9rem; cursor: pointer; }
+.undo-button:hover { background: #a5d8ff; }
+.undo-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.undo-countdown { height: 3px; background: #74c0fc; transform-origin: left; animation: undo-countdown 8s linear forwards; }
+@keyframes undo-countdown { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .undo-countdown { animation: none; } }

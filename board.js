@@ -466,6 +466,7 @@
     try {
       const result = await cloudRequest(date);
       selectedDateKey = date;
+      remoteBoardChanges++;
       state = result.board || freshDayState(date);
       cloudRevision = result.revision;
       savedSnapshot = JSON.stringify(state);
@@ -2312,6 +2313,7 @@
       confirmLabel: "Return",
       confirmClass: "button-park"
     }))) return;
+    const before = JSON.stringify(state);
     job.status = job.wasParked ? "parked" : "planned";
     recordJobEvent(job, "returned", { editorId: job.editorId, suite: job.suite });
     delete job.suite;
@@ -2319,6 +2321,7 @@
     delete job.pausedInSuite;
     showToast(`${job.title} returned to the Job Queue`, "biff");
     render();
+    offerUndo(before);
   }
 
   function moveQueuedJobs(editorId, suite) {
@@ -2385,6 +2388,7 @@
       confirmLabel: "Pause",
       confirmClass: "button-park"
     }))) return;
+    const before = JSON.stringify(state);
     job.status = "queued";
     job.pausedInSuite = true;
     job.queuedAt = new Date().toISOString();   // paused jobs sort first (queuedJobsForSuite)
@@ -2397,6 +2401,7 @@
     recordJobEvent(job, "paused_in_suite", { editorId: job.editorId, suite: job.suite });
     showToast(`${job.title} paused · still in ${suiteLabel(job.suite)} under Coming up next`, "park");
     render();
+    offerUndo(before);
   }
 
   async function completeJob(jobId) {
@@ -2415,6 +2420,7 @@
       confirmLabel: "Complete",
       confirmClass: "button-complete"
     }))) return;
+    const before = JSON.stringify(state);
     job.status = "completed";
     job.completedBy = editor ? editor.name : "Unassigned editor";
     job.completedSuite = job.suite;
@@ -2424,6 +2430,7 @@
     const remainingActive = activeJobsForEditor(job.editorId).length;
     showToast(`${job.title} signed off${remainingActive ? ` · ${job.completedBy} remains busy with ${remainingActive} live job${remainingActive === 1 ? "" : "s"}` : waiting ? ` · ${waiting} queued job${waiting === 1 ? " is" : "s are"} ready next` : ` · ${job.completedBy} is now free`}`, "complete");
     render();
+    offerUndo(before);
   }
 
   function confirmJobAction({ eyebrow, title, jobName, message, confirmLabel, confirmClass, force = false }) {
@@ -2461,6 +2468,7 @@
       return;
     }
     const editor = editorById(job.editorId);
+    const before = JSON.stringify(state);
     job.biffedFrom = job.status;
     job.biffedEditor = editor?.name || "Unassigned";
     job.biffedSuite = job.suite || null;
@@ -2474,6 +2482,7 @@
     biffingJobId = null;
     showToast(`${job.title} biffed`, "biff");
     render();
+    offerUndo(before);
   }
 
   function toggleBreak(editorId) {
@@ -2735,6 +2744,44 @@
   function emptyState(title, message) {
     return `<div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h9M5 17h6" /></svg><strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span></div>`;
   }
+
+  // ---- Undo (issue #12): after Complete, Pause, Biff or Return, a bar with Undo for 8 s.
+  // Undo restores the whole day's board as it was just before the action, unless
+  // someone else's change has arrived since (then it is cancelled, never overwritten).
+  let remoteBoardChanges = 0;   // bumped whenever the board is replaced from the cloud
+  let undoEntry = null;
+  let undoTimer = null;
+  const undoBar = document.createElement("div");
+  undoBar.className = "undo-bar";
+  undoBar.setAttribute("role", "status");
+  undoBar.hidden = true;
+  undoBar.innerHTML = '<div class="undo-row"><span class="undo-message"></span><button type="button" class="undo-button">Undo</button></div><div class="undo-countdown"></div>';
+  document.body.append(undoBar);
+  function hideUndo() { clearTimeout(undoTimer); undoEntry = null; undoBar.hidden = true; }
+  function offerUndo(before) {
+    const message = toast.textContent;
+    clearTimeout(toastTimer); toast.classList.remove("visible");   // the bar carries the message
+    undoEntry = { before, date: selectedDateKey, remote: remoteBoardChanges };
+    undoBar.querySelector(".undo-message").textContent = message;
+    const line = undoBar.querySelector(".undo-countdown");
+    line.style.animation = "none"; void line.offsetWidth; line.style.animation = "";   // restart the countdown
+    undoBar.hidden = false;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(hideUndo, 8000);
+  }
+  undoBar.querySelector(".undo-button").addEventListener("click", async () => {
+    const entry = undoEntry;
+    hideUndo();
+    if (!entry) return;
+    for (let i = 0; i < 50 && cloudBusy; i++) await new Promise((r) => setTimeout(r, 100));   // let a save in progress finish
+    if (entry.date !== selectedDateKey || entry.remote !== remoteBoardChanges || cloudBusy) {
+      showToast("Someone else changed the board just now, so this can't be undone", "danger");
+      return;
+    }
+    state = JSON.parse(entry.before);
+    render();
+    showToast("Undone", "info");
+  });
 
   function showToast(message, tone = "info") {
     clearTimeout(toastTimer);
@@ -3121,7 +3168,7 @@
         const latest = await cloudRequest(date);
         if (!cloudReady || cloudBusy || date !== selectedDateKey || revision !== cloudRevision || latest.revision === revision) return;
         cloudReady = false;
-        state = latest.board || freshDayState(date); cloudRevision = latest.revision; savedSnapshot = JSON.stringify(state); render(); cloudReady = true;
+        state = latest.board || freshDayState(date); cloudRevision = latest.revision; savedSnapshot = JSON.stringify(state); remoteBoardChanges++; render(); cloudReady = true;
         syncStatus("Updated from your other device");
       }
     } catch { if (cloudReady) syncStatus("Could not check for updates · Changes will still be checked before saving"); }
