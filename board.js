@@ -1514,9 +1514,10 @@
             <select class="assignee-select" data-job-assignee="${escapeHtml(job.id)}" aria-label="Editor pre-assigned to ${escapeHtml(job.title)}">
               ${editorOptions(job.editorId)}
             </select>
-            ${readiness.ready ? `<button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" title="Add to ${escapeHtml(editorById(job.editorId).name)}'s Coming up next">Send to ${escapeHtml(editorById(job.editorId).name.split(" ")[0])}</button>` : ""}
+            ${readiness.ready ? `<button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" title="${escapeHtml(readiness.message)}">Send to ${escapeHtml(editorById(job.editorId).name.split(" ")[0])}</button>` : ""}
           </div>`}
-          ${job.editorId ? `<div class="readiness ${readiness.ready ? "ready" : "waiting"}">${escapeHtml(readiness.message)}</div>` : ""}
+          ${""/* Issue #15: no status line on Job Queue cards; only explain when the picked editor can't take the job (no Send button then). */}
+          ${job.editorId && !readiness.ready ? `<div class="readiness waiting">${escapeHtml(readiness.message)}</div>` : ""}
         </article>
       `;
     }).join("");
