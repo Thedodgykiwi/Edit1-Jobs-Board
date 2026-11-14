@@ -1510,9 +1510,9 @@
             <select class="assignee-select" data-job-assignee="${escapeHtml(job.id)}" aria-label="Editor pre-assigned to ${escapeHtml(job.title)}">
               ${editorOptions(job.editorId)}
             </select>
-            <button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" ${readiness.ready ? "" : "disabled"}>Send to Editor</button>
+            ${readiness.ready ? `<button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" title="Add to ${escapeHtml(editorById(job.editorId).name)}'s Coming up next">Send to ${escapeHtml(editorById(job.editorId).name.split(" ")[0])}</button>` : ""}
           </div>`}
-          <div class="readiness ${readiness.ready ? "ready" : "waiting"}">${escapeHtml(readiness.message)}</div>
+          ${job.editorId ? `<div class="readiness ${readiness.ready ? "ready" : "waiting"}">${escapeHtml(readiness.message)}</div>` : ""}
         </article>
       `;
     }).join("");
