@@ -52,3 +52,19 @@ html[data-theme="dark"] .button-primary { color: #032b30 !important; }
   .brand-title-row h1 { font-size: 1.05rem !important; }
   .brand-title-row { gap: .3rem !important; }
 }
+
+/* Board messages (issue #16): the playbook's dark card, like the Undo bar, with a
+   small colour dot for the kind of message. Same wording and timing as before. */
+html .toast, html[data-theme] .toast, html[data-theme] .toast[class*="toast-"] {
+  display: flex; align-items: center; gap: .6rem;
+  width: min(420px, calc(100vw - 1.5rem)); max-width: none;
+  padding: .75rem .9rem; border: 0; border-radius: 12px;
+  background: #1d1f23; color: #fff; font-size: .88rem; font-weight: 600; line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+.toast::before { content: ""; flex: none; width: .6rem; height: .6rem; border-radius: 50%; background: var(--toast-dot, #74c0fc); }
+.toast.toast-info, .toast.toast-park { --toast-dot: #74c0fc; }
+.toast.toast-complete { --toast-dot: #69db7c; }
+.toast.toast-break { --toast-dot: #b197fc; }
+.toast.toast-biff { --toast-dot: #f783ac; }
+.toast.toast-danger { --toast-dot: #ff8787; }
