@@ -1351,7 +1351,7 @@
         `;
       }
       const canFastTrack = editor && !editor.onBreak && (allowsConcurrentRunning(editor.id, suite) || !activeJobs.length);
-      const fastTrackMarkup = editor ? `<button class="suite-break-icon suite-fast-track-icon" data-fast-track-suite="${suite}" type="button" ${canFastTrack ? "" : "disabled"} aria-label="Fast Track job for ${escapeHtml(editor.name)} in ${escapeHtml(suiteLabel(suite))}" title="${editor.onBreak ? "Editor is on break" : activeJobs.length && !allowsConcurrentRunning(editor.id, suite) ? "Finish or park the current job first" : "Fast Track job"}">
+      const fastTrackMarkup = editor ? `<button class="suite-break-icon suite-fast-track-icon" data-fast-track-suite="${suite}" type="button" ${canFastTrack ? "" : "disabled"} aria-label="Fast Track job for ${escapeHtml(editor.name)} in ${escapeHtml(suiteLabel(suite))}" title="${editor.onBreak ? "Editor is on break" : activeJobs.length && !allowsConcurrentRunning(editor.id, suite) ? "Finish or pause the current job first" : "Fast Track job"}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>` : "";
       const breakMarkup = editor ? `<button class="suite-break-icon ${editor.onBreak ? "active" : ""}" data-suite-break="${editor.id}" type="button" aria-label="${editor.onBreak ? "Return " + escapeHtml(editor.name) + " from break" : "Put " + escapeHtml(editor.name) + " on break"}" title="${editor.onBreak ? "Return from break" : "Take a break"}">
@@ -1427,7 +1427,7 @@
           </div>
         </div>
         <div class="active-actions">
-          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="${allowsConcurrentRunning(editor.id) ? "Pause" : "Park"} ${escapeHtml(active.title)}" title="${allowsConcurrentRunning(editor.id) ? "Pause job (stays in this suite)" : "Park job"}">
+          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Pause ${escapeHtml(active.title)}" title="Pause job (stays in this suite)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
           </button>
           <button class="button button-complete" data-complete-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Complete ${escapeHtml(active.title)}" title="Complete job">
@@ -1440,6 +1440,8 @@
       </div>`).join("");
 
     const canRunConcurrently = allowsConcurrentRunning(editor.id);
+    // Paused jobs (top of the list) and the first job that is only waiting can start (issue #11).
+    const firstWaiting = Math.max(0, queued.findIndex((job) => !job.pausedInSuite)) || queued.filter((job) => job.pausedInSuite).length;
 
     const queueMarkup = queued.length ? `
       <div class="coming-up-divider"><span>Coming up next</span></div>
@@ -1448,7 +1450,7 @@
           <div class="queue-position">${index + 1}</div>
           <div class="queued-job-copy"><button class="job-detail-trigger queued-job-title" data-job-details="${escapeHtml(job.id)}" type="button" title="View details for ${escapeHtml(job.title)}"><strong>${escapeHtml(job.title)}</strong>${job.pausedInSuite ? ' <span class="paused-label">Paused</span>' : ""}</button><div class="queued-job-meta"><span>${escapeHtml(job.workType)}${job.due ? ` · ${escapeHtml(job.due)}` : ""}</span>${dueWarningBadge(job)}</div></div>
           <div class="queued-job-actions">
-            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > 0)) ? "disabled" : ""} aria-label="${job.pausedInSuite ? "Resume" : "Start"} ${escapeHtml(job.title)}" title="${job.pausedInSuite ? "Resume job" : "Start job"}">
+            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > firstWaiting)) ? "disabled" : ""} aria-label="${job.pausedInSuite ? "Resume" : "Start"} ${escapeHtml(job.title)}" title="${job.pausedInSuite ? "Resume job" : "Start job"}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z" /></svg>
             </button>
             <button class="queue-return-button" data-unqueue-job="${escapeHtml(job.id)}" type="button" aria-label="Return ${escapeHtml(job.title)} to the Job Queue" title="Return to Job Queue">
@@ -2286,7 +2288,7 @@
     if (!job) return;
     const editor = editorById(job.editorId);
     if (!editor || editor.onBreak || (!allowsConcurrentRunning(job.editorId, job.suite) && activeJobForEditor(job.editorId))) {
-      showToast(editor?.onBreak ? `${editor.name} is still on break` : "Finish or park the current job first", "danger");
+      showToast(editor?.onBreak ? `${editor.name} is still on break` : "Finish or pause the current job first", "danger");
       return;
     }
     job.status = "active";
@@ -2342,9 +2344,11 @@
       showToast("Bring the editor back from break before parking this job", "danger");
       return;
     }
-    // Issue #10: in a suite that runs jobs side by side (Edit 1), pausing keeps the job
-    // on the suite card, at the top of "Coming up next"; its ▶ brings it back.
-    if (allowsConcurrentRunning(job.editorId, job.suite)) return pauseInSuite(job, editor);
+    // Issues #10 / #11: pausing keeps the job on its suite card, at the top of
+    // "Coming up next"; ▶ resumes it (one running job per suite, except Edit 1)
+    // and ↩ parks it in the Job Queue. The old park-to-queue code below is kept
+    // but no longer reached from the Pause button.
+    return pauseInSuite(job, editor);
     if (!(await confirmJobAction({
       eyebrow: "Confirm pause",
       title: "Park this job?",
@@ -2783,7 +2787,7 @@
       return;
     }
     if (activeJobs.length && !allowsConcurrentRunning(editor.id, suite)) {
-      showToast("Finish or park the current job first", "danger");
+      showToast("Finish or pause the current job first", "danger");
       return;
     }
     fastTrackTarget = { suite, editorId: editor.id };
@@ -2803,7 +2807,7 @@
     const activeJobs = activeJobsForSuite(target.suite);
     if (editor.onBreak || (activeJobs.length && !allowsConcurrentRunning(editor.id, target.suite))) {
       fastTrackDialog.close();
-      showToast(editor.onBreak ? `${editor.name} is on break` : "Finish or park the current job first", "danger");
+      showToast(editor.onBreak ? `${editor.name} is on break` : "Finish or pause the current job first", "danger");
       return;
     }
     const createdAt = new Date().toISOString();
