@@ -182,3 +182,8 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
   #biffDialog .dialog-actions { display: flex; flex-direction: column-reverse; gap: .6rem; }
   #biffDialog .dialog-actions .button { width: 100%; min-height: 2.8rem; }
 }
+
+/* Job Queue cards (issue #14): editor drop-down + Send button sit at the bottom of every
+   card, so they line up across a row whatever the content above them */
+#plannedJobs .job-card { display: flex; flex-direction: column; }
+#plannedJobs .job-card > .job-actions { margin-top: auto; }

@@ -1509,7 +1509,7 @@
             <span>${escapeHtml(job.contact || "No reporter or producer assigned")}</span>
           </div>` : ""}
           ${!uiState.compactQueueCards && uiState.queueMetadata.editFormat && job.type ? `<div class="job-meta"><span>${escapeHtml(job.type)}</span></div>` : ""}
-          ${!uiState.compactQueueCards && job.status === "parked" ? `<div class="parked-origin">From ${escapeHtml(job.parkedFromEditorName || "previous editor")} · ${escapeHtml(job.parkedFromSuite ? suiteLabel(job.parkedFromSuite) : "No suite")} · ${escapeHtml(job.parkedAt || "")}</div>` : ""}
+          ${""/* Issue #14: no "From editor · suite · time" line on parked cards; the Parked tag and the editor drop-down say it, and the history keeps the detail. */}
           ${uiState.compactQueueCards ? "" : `<div class="job-actions">
             <select class="assignee-select" data-job-assignee="${escapeHtml(job.id)}" aria-label="Editor pre-assigned to ${escapeHtml(job.title)}">
               ${editorOptions(job.editorId)}
