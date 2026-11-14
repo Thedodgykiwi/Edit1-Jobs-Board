@@ -936,7 +936,8 @@
 
   function queuedJobsForSuite(suite) {
     return state.jobs.filter((job) => job.status === "queued" && job.suite === suite)
-      .sort((a, b) => (a.queuedAt || "").localeCompare(b.queuedAt || ""));
+      // Paused jobs (issue #10) first, then in the order they were queued.
+      .sort((a, b) => Number(Boolean(b.pausedInSuite)) - Number(Boolean(a.pausedInSuite)) || (a.queuedAt || "").localeCompare(b.queuedAt || ""));
   }
 
   function plannedJobsForEditor(editorId) {
@@ -1426,7 +1427,7 @@
           </div>
         </div>
         <div class="active-actions">
-          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Park ${escapeHtml(active.title)}" title="Park job">
+          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="${allowsConcurrentRunning(editor.id) ? "Pause" : "Park"} ${escapeHtml(active.title)}" title="${allowsConcurrentRunning(editor.id) ? "Pause job (stays in this suite)" : "Park job"}">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
           </button>
           <button class="button button-complete" data-complete-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Complete ${escapeHtml(active.title)}" title="Complete job">
@@ -1445,9 +1446,9 @@
       <div class="suite-queue">${queued.map((job, index) => `
         <div class="queued-job suite-job-card ${isProtectedWork(job.workType) ? "protected-work" : ""} ${dueWarningClass(job)}">
           <div class="queue-position">${index + 1}</div>
-          <div class="queued-job-copy"><button class="job-detail-trigger queued-job-title" data-job-details="${escapeHtml(job.id)}" type="button" title="View details for ${escapeHtml(job.title)}"><strong>${escapeHtml(job.title)}</strong></button><div class="queued-job-meta"><span>${escapeHtml(job.workType)}${job.due ? ` · ${escapeHtml(job.due)}` : ""}</span>${dueWarningBadge(job)}</div></div>
+          <div class="queued-job-copy"><button class="job-detail-trigger queued-job-title" data-job-details="${escapeHtml(job.id)}" type="button" title="View details for ${escapeHtml(job.title)}"><strong>${escapeHtml(job.title)}</strong>${job.pausedInSuite ? ' <span class="paused-label">Paused</span>' : ""}</button><div class="queued-job-meta"><span>${escapeHtml(job.workType)}${job.due ? ` · ${escapeHtml(job.due)}` : ""}</span>${dueWarningBadge(job)}</div></div>
           <div class="queued-job-actions">
-            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > 0)) ? "disabled" : ""} aria-label="Start ${escapeHtml(job.title)}" title="Start job">
+            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > 0)) ? "disabled" : ""} aria-label="${job.pausedInSuite ? "Resume" : "Start"} ${escapeHtml(job.title)}" title="${job.pausedInSuite ? "Resume job" : "Start job"}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z" /></svg>
             </button>
             <button class="queue-return-button" data-unqueue-job="${escapeHtml(job.id)}" type="button" aria-label="Return ${escapeHtml(job.title)} to the Job Queue" title="Return to Job Queue">
@@ -1770,6 +1771,7 @@
       break_started: { title: "Break started", detail: `${editor} paused editing`, tone: "paused" },
       break_ended: { title: "Returned from break", detail: `${editor} · ${suite}`, tone: "started" },
       parked: { title: "Job parked", detail: `${editor} · ${suite}`, tone: "parked" },
+      paused_in_suite: { title: "Job paused", detail: `Kept in ${suite} under Coming up next`, tone: "parked" },
       returned: { title: "Returned to the Job Queue", detail: event.editorId ? `From ${editor} · ${suite}` : "Unassigned", tone: "returned" },
       moved: { title: `Moved with ${editor}`, detail: suite, tone: "assigned" },
       completed: { title: "Job completed", detail: `${editor} · ${suite}`, tone: "completed" },
@@ -2290,6 +2292,7 @@
     job.status = "active";
     job.startedAt = currentTime();
     delete job.queuedAt;
+    delete job.pausedInSuite;
     const hasStartedBefore = job.history?.some((event) => event.type === "started" || event.type === "resumed");
     recordJobEvent(job, hasStartedBefore ? "resumed" : "started", { editorId: job.editorId, suite: job.suite });
     showToast(`${job.title} started in ${suiteLabel(job.suite)}`, "complete");
@@ -2311,6 +2314,7 @@
     recordJobEvent(job, "returned", { editorId: job.editorId, suite: job.suite });
     delete job.suite;
     delete job.queuedAt;
+    delete job.pausedInSuite;
     showToast(`${job.title} returned to the Job Queue`, "biff");
     render();
   }
@@ -2325,6 +2329,7 @@
         job.status = job.wasParked ? "parked" : "planned";
         delete job.suite;
         delete job.queuedAt;
+        delete job.pausedInSuite;
       }
     });
   }
@@ -2337,6 +2342,9 @@
       showToast("Bring the editor back from break before parking this job", "danger");
       return;
     }
+    // Issue #10: in a suite that runs jobs side by side (Edit 1), pausing keeps the job
+    // on the suite card, at the top of "Coming up next"; its ▶ brings it back.
+    if (allowsConcurrentRunning(job.editorId, job.suite)) return pauseInSuite(job, editor);
     if (!(await confirmJobAction({
       eyebrow: "Confirm pause",
       title: "Park this job?",
@@ -2361,6 +2369,29 @@
     delete job.suite;
     const remainingActive = activeJobsForEditor(origin.editorId).length;
     showToast(`${job.title} returned to the Job Queue · ${remainingActive ? `${origin.editorName} remains busy with ${remainingActive} live job${remainingActive === 1 ? "" : "s"}` : `${origin.editorName} and ${suiteLabel(origin.suite)} are free`}`, "park");
+    render();
+  }
+
+  async function pauseInSuite(job, editor) {
+    if (!(await confirmJobAction({
+      eyebrow: "Confirm pause",
+      title: "Pause this job?",
+      jobName: job.title,
+      message: ` will pause and stay in ${suiteLabel(job.suite)} under Coming up next.`,
+      confirmLabel: "Pause",
+      confirmClass: "button-park"
+    }))) return;
+    job.status = "queued";
+    job.pausedInSuite = true;
+    job.queuedAt = new Date().toISOString();   // paused jobs sort first (queuedJobsForSuite)
+    // If it is later returned to the Job Queue, it shows as parked from here.
+    job.wasParked = true;
+    job.parkedAt = currentTime();
+    job.parkedFromEditorId = job.editorId;
+    job.parkedFromEditorName = editor?.name || "Previous editor";
+    job.parkedFromSuite = job.suite;
+    recordJobEvent(job, "paused_in_suite", { editorId: job.editorId, suite: job.suite });
+    showToast(`${job.title} paused · still in ${suiteLabel(job.suite)} under Coming up next`, "park");
     render();
   }
 
@@ -2434,6 +2465,7 @@
     job.status = "biffed";
     delete job.suite;
     delete job.queuedAt;
+    delete job.pausedInSuite;
     biffDialog.close();
     biffingJobId = null;
     showToast(`${job.title} biffed`, "biff");
@@ -2619,6 +2651,7 @@
       job.editorId = null;
       delete job.suite;
       delete job.queuedAt;
+      delete job.pausedInSuite;
     });
     editor.onBreak = false;
     editor.removedFromRoster = true;
