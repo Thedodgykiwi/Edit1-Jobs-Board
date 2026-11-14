@@ -129,8 +129,9 @@
             <div>
               <p class="eyebrow">Incoming / planned</p>
               <div class="queue-title-line">
-                <h2 id="poolTitle">Job Queue <span class="count-badge" id="poolCount">0</span></h2>
-                <label class="queue-compact-toggle" title="Use compact Job Queue cards">
+                <!-- Issue #3: the title opens/closes the queue (shell.js clicks the hidden #poolCollapseButton) -->
+                <h2 id="poolTitle"><button type="button" id="poolTitleToggle" class="queue-title-toggle" aria-controls="jobPoolContent" aria-expanded="false" title="Show or hide jobs (J)">Job Queue <span class="count-badge" id="poolCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
+                <label class="queue-compact-toggle moved-to-menu" title="Use compact Job Queue cards">
                   <input id="compactQueueQuickToggle" type="checkbox" />
                   <span class="compact-switch" aria-hidden="true"></span>
                   <span class="queue-compact-label">Compact cards</span>
@@ -138,7 +139,11 @@
               </div>
             </div>
             <div class="section-heading-actions section-heading-actions-right">
-              <button class="collapse-button" id="poolCollapseButton" type="button" aria-expanded="false" aria-controls="jobPoolContent" aria-keyshortcuts="J">
+              <div class="queue-view-seg" role="radiogroup" aria-label="Job card size">
+                <button type="button" role="radio" data-queue-view="cards" aria-label="Cards" title="Cards"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5" /><rect x="4" y="13" width="16" height="7" rx="1.5" /></svg></button>
+                <button type="button" role="radio" data-queue-view="list" aria-label="List (compact cards)" title="List (compact cards)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" /></svg></button>
+              </div>
+              <button class="collapse-button moved-to-menu" id="poolCollapseButton" type="button" aria-expanded="false" aria-controls="jobPoolContent" aria-keyshortcuts="J">
                 <span>Show jobs</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>

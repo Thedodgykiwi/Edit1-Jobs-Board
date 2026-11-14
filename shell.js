@@ -42,6 +42,27 @@
   $('profileSettings').addEventListener('click', () => { open(false); $('settingsButton').click(); });
   $('sign-out').addEventListener('click', () => open(false));
 
+  // ---- Job Queue header (issue #3): tap the title to open/close; Cards / List switch ----
+  // The board's own controls (#poolCollapseButton, #compactQueueQuickToggle) are hidden
+  // but still do the work, so the board's logic is unchanged.
+  const pool = $('poolSection');
+  const titleToggle = $('poolTitleToggle');
+  titleToggle.addEventListener('click', () => $('poolCollapseButton').click());
+  const quick = $('compactQueueQuickToggle');
+  const syncQueueHeader = () => {
+    titleToggle.setAttribute('aria-expanded', String(!pool.classList.contains('collapsed')));
+    pool.querySelectorAll('[data-queue-view]').forEach((b) =>
+      b.setAttribute('aria-checked', String((b.dataset.queueView === 'list') === quick.checked)));
+  };
+  pool.querySelectorAll('[data-queue-view]').forEach((b) => b.addEventListener('click', () => {
+    const list = b.dataset.queueView === 'list';
+    if (quick.checked !== list) { quick.checked = list; quick.dispatchEvent(new Event('change')); }
+    syncQueueHeader();
+  }));
+  new MutationObserver(syncQueueHeader).observe(pool, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(syncQueueHeader).observe($('plannedJobs'), { attributes: true, attributeFilter: ['class'] });
+  syncQueueHeader();
+
   window.addEventListener('account:change', (e) => {
     const u = e.detail.user;
     const label = u?.displayName || u?.email || '';

@@ -88,3 +88,24 @@
 .whats-new-body .wn-range { margin: 1rem 0 .2rem; }
 .whats-new-body .done-divider { display: flex; align-items: center; width: 100%; gap: .4rem; padding: .35rem 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
 .whats-new-body .done-divider::before, .whats-new-body .done-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* Job Queue header (issue #3): the title is the open/close button, the arrow sits right after the count */
+.queue-title-toggle {
+  display: inline-flex; align-items: center; gap: .55rem; padding: 0; border: 0; background: none;
+  color: inherit; font: inherit; cursor: pointer; text-align: left; border-radius: 8px;
+}
+.queue-title-toggle .count-badge { margin: 0; }
+.queue-chevron {
+  width: 1.9rem; height: 1.9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+  display: inline-grid; place-items: center; flex: none; color: var(--muted); transition: transform .2s;
+}
+.queue-chevron svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.queue-title-toggle[aria-expanded="true"] .queue-chevron { transform: rotate(180deg); }
+.queue-title-toggle:hover .queue-chevron { color: var(--text); border-color: var(--muted-2); }
+.queue-title-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.queue-view-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); }
+.queue-view-seg button { width: 2.3rem; height: 2rem; border: 0; border-radius: 8px; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.queue-view-seg button[aria-checked="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.queue-view-seg svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.collapsible-section.collapsed .queue-view-seg { display: none; }
+#poolSection .column-heading { flex-wrap: nowrap; }
