@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-accent="blue"><!-- the app's default accent colour: blue, purple, green, teal, orange or pink -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no, email=no, address=no" />
+  <title>Edit 1 Job Board</title>
+  <meta name="theme-color" content="#495057" />
+  <!-- Home-screen app: name, icons and colour. Files here say "Local"; the shared
+       deploy swaps in each stage's icons, name and colour (playbook pwa-icons.md). -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/app/local/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/app/local/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/app/local/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Edit 1 Local" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Libraries for the app's screens (vendor/, see vendor/README.md), imported by name -->
+  <script type="importmap">
+    {
+      "imports": {
+        "preact": "./vendor/preact.js",
+        "preact/hooks": "./vendor/preact-hooks.js",
+        "htm": "./vendor/htm.js",
+        "htm/preact": "./vendor/htm-preact.js",
+        "@preact/signals": "./vendor/signals.js",
+        "@preact/signals-core": "./vendor/signals-core.js"
+      }
+    }
+  </script>
+  <!-- Apply the saved theme and text size before the page draws (no flash). See menu.js. -->
+  <script>
+    try {
+      const p = JSON.parse(localStorage.getItem(`prefs:${location.pathname.split('/')[1] || 'app'}`) || '{}');
+      document.documentElement.dataset.theme = p.theme || 'auto';
+      document.documentElement.dataset.textSize = p.textSize || 'standard';
+      document.documentElement.dataset.accent = p.accent || document.documentElement.dataset.accent;
+    } catch { /* storage blocked: defaults */ }
+  </script>
+</head>
+<body>
+  <!-- Coloured stage banner (Dev, Alpha, Staging; LOCAL on your computer; none on Production)
+       so test versions can't be mistaken for the live app, with a link to the pipeline page. -->
+  <div id="stage-banner" hidden>
+    <span id="stage-name"></span>
+    <a id="pipeline-link" href="../pipeline/" hidden>Pipeline</a>
+  </div>
+  <!-- Offline strip (pwa.js): shown while there's no connection -->
+  <div id="offline-strip" class="offline-strip" role="status" hidden>You're offline. The app still works; anything that needs the internet will wait.</div>
+
+  <!-- App menu (menu.js), top-right: theme, Settings, version / What's new.
+       Google sign-in (account.js) adds your photo, name and Sign in / Sign out
+       once Firebase is set up (see firebase-config.js). -->
+  <div id="account" class="account">
+    <button type="button" id="sign-in" class="sign-in" hidden><span data-icon="google-logo"></span>Sign in</button>
+    <button type="button" id="account-btn" class="avatar-btn" aria-expanded="false" aria-controls="account-menu" aria-label="Menu" title="Menu">
+      <span class="avatar-wrap">
+        <img id="avatar-img" class="avatar" alt="" referrerpolicy="no-referrer" hidden>
+        <span id="avatar" class="avatar" aria-hidden="true"><span data-icon="user"></span></span>
+        <span id="sync-dot" class="sync-dot" aria-hidden="true" hidden></span>
+      </span>
+      <span id="avatar-label" class="avatar-label" aria-hidden="true">Menu</span>
+    </button>
+    <div id="account-menu" class="account-menu" hidden>
+      <div id="who" class="who" hidden>
+        <img id="who-img" class="avatar" alt="" referrerpolicy="no-referrer" hidden>
+        <span id="who-letter" class="avatar" aria-hidden="true"></span>
+        <p><strong id="account-name"></strong><span id="account-email"></span></p>
+      </div>
+      <p id="sync-status" class="sync-status" hidden></p>
+      <p class="menu-label" id="theme-label">Theme</p>
+      <div class="seg" role="radiogroup" aria-labelledby="theme-label" data-pref="theme">
+        <button type="button" role="radio" data-value="light"><span data-icon="sun"></span>Light</button>
+        <button type="button" role="radio" data-value="auto"><span data-icon="circle-half"></span>Auto</button>
+        <button type="button" role="radio" data-value="dark"><span data-icon="moon"></span>Dark</button>
+      </div>
+      <button type="button" id="open-settings" class="plain-btn"><span data-icon="gear-six"></span>Settings</button>
+      <button type="button" id="install-btn" class="plain-btn install-btn" hidden><span data-icon="device-mobile"></span><span id="install-label">Install app</span></button>
+      <button type="button" id="sign-out" class="plain-btn" hidden><span data-icon="sign-out"></span>Sign out</button>
+      <hr class="menu-sep">
+      <p id="offline-ready" class="offline-ready" hidden><span data-icon="check-circle"></span>Ready to use offline</p>
+      <button type="button" id="version-btn" class="version-btn">What's new</button>
+    </div>
+  </div>
+
+  <!-- Settings panel (menu.js). Add the app's own settings here. -->
+  <dialog id="settings" class="sheet" aria-labelledby="settings-title">
+    <header><h2 id="settings-title">Settings</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
+    <section class="setting">
+      <p class="setting-name" id="accent-label">Accent colour</p>
+      <div class="swatches" role="radiogroup" aria-labelledby="accent-label" data-pref="accent">
+        <button type="button" role="radio" data-value="blue" style="--sw:#3b5bdb" aria-label="Blue" title="Blue"></button>
+        <button type="button" role="radio" data-value="purple" style="--sw:#7048e8" aria-label="Purple" title="Purple"></button>
+        <button type="button" role="radio" data-value="green" style="--sw:#237032" aria-label="Green" title="Green"></button>
+        <button type="button" role="radio" data-value="teal" style="--sw:#0b7285" aria-label="Teal" title="Teal"></button>
+        <button type="button" role="radio" data-value="orange" style="--sw:#c2410c" aria-label="Orange" title="Orange"></button>
+        <button type="button" role="radio" data-value="pink" style="--sw:#c2255c" aria-label="Pink" title="Pink"></button>
+      </div>
+    </section>
+    <section class="setting">
+      <p class="setting-name" id="text-size-label">Text size</p>
+      <div class="seg" role="radiogroup" aria-labelledby="text-size-label" data-pref="textSize">
+        <button type="button" role="radio" data-value="standard">Standard</button>
+        <button type="button" role="radio" data-value="large">Large</button>
+      </div>
+    </section>
+      <p id="styleguide-link" class="setting-foot" hidden><a href="styleguide.html">Style guide</a> (building blocks for this app; not shown on Production)</p>
+  </dialog>
+
+  <!-- What's new panel (menu.js): this stage's release notes from releases.json, made by the deploy. -->
+  <dialog id="whats-new" class="sheet" aria-labelledby="whats-new-title">
+    <header><h2 id="whats-new-title">What's new</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
+    <div id="whats-new-body"></div>
+  </dialog>
+
+  <!-- The app's screens: drawn by app/main.js (Preact components). -->
+  <main id="app" aria-label="Edit 1 Job Board"></main>
+
+  <!-- iPhone/iPad: how to add the app to the Home Screen (pwa.js; Safari can't install from a button) -->
+  <dialog id="ios-install" class="sheet" aria-labelledby="ios-install-title">
+    <header><h2 id="ios-install-title">Add to Home Screen</h2><button type="button" class="close-btn" data-close aria-label="Close"><span data-icon="x"></span></button></header>
+    <ol class="steps">
+      <li>Tap Safari's <b>Share</b> button <span data-icon="export"></span> (beside the address bar, or inside the <b>⋯</b> menu).</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+      <li>Tap <b>Add</b>. The app's icon appears on your Home Screen.</li>
+    </ol>
+    <p class="muted">Open it from that icon for the full-screen app; it works offline too.</p>
+  </dialog>
+
+  <!-- One-time install tip (pwa.js): from the 2nd visit on, until installed or dismissed -->
+  <div id="install-tip" class="install-tip" role="region" aria-label="Install tip" hidden>
+    <p><b>Use it like an app</b><span id="install-tip-text">Install it to open it from your home screen, even offline.</span></p>
+    <button type="button" id="install-tip-go" class="install-tip-go">Install</button>
+    <button type="button" id="install-tip-x" class="install-tip-x" aria-label="Don't show this again"><span data-icon="x"></span></button>
+  </div>
+
+  <!-- "New version ready" bar (pwa.js) -->
+  <div id="update-bar" class="update-bar" role="status" hidden>
+    <span>A new version is ready.</span><button type="button" id="update-reload">Reload</button>
+  </div>
+
+  <script src="stage.js"></script>
+  <script src="icons.js"></script>
+  <script src="toast.js"></script>
+  <script src="error-screen.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="menu.js"></script>
+  <script src="pwa.js"></script>
+  <script src="app.js"></script>
+  <script type="module" src="account.js"></script>
+  <script type="module" src="app/main.js"></script>
+</body>
+</html>
