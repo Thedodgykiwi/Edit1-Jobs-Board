@@ -109,3 +109,16 @@
 .queue-view-seg svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .collapsible-section.collapsed .queue-view-seg { display: none; }
 #poolSection .column-heading { flex-wrap: nowrap; }
+
+/* Editors & suites header (issue #4): editor list + Job Queue as small icon buttons */
+.operations .editor-view-actions { display: flex !important; flex-direction: row !important; align-items: center !important; gap: .4rem !important; flex-wrap: nowrap !important; width: auto !important; }
+.section-icon-btn {
+  width: 2.4rem; height: 2.4rem; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text);
+}
+.section-icon-btn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.section-icon-btn:hover { background: var(--panel-2); }
+.section-icon-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.section-icon-btn[aria-expanded="true"] { background: var(--panel-2); border-color: var(--muted-2); }
+.section-icon-btn[aria-pressed="false"] { color: var(--muted-2); border-style: dashed; }
+.operations > .section-heading { flex-wrap: nowrap; align-items: flex-start; }

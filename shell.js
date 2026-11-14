@@ -63,6 +63,22 @@
   new MutationObserver(syncQueueHeader).observe($('plannedJobs'), { attributes: true, attributeFilter: ['class'] });
   syncQueueHeader();
 
+  // ---- Editors & suites header (issue #4): editor list + Job Queue as two icon buttons ----
+  const edBtn = $('editorsIconButton'), qBtn = $('queueIconButton'), edPanel = $('editorsPanel');
+  edBtn.addEventListener('click', () => $('editorsCollapseButton').click());
+  qBtn.addEventListener('click', () => $('queueVisibilityButton').click());
+  const syncOpsHeader = () => {
+    const edOpen = !edPanel.classList.contains('collapsed-content');
+    edBtn.setAttribute('aria-expanded', String(edOpen));
+    edBtn.title = `${edOpen ? 'Hide' : 'Show'} editor list`; edBtn.setAttribute('aria-label', edBtn.title);
+    const qShown = !pool.hidden;
+    qBtn.setAttribute('aria-pressed', String(qShown));
+    qBtn.title = `${qShown ? 'Hide' : 'Show'} Job Queue (E)`;
+  };
+  new MutationObserver(syncOpsHeader).observe(edPanel, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(syncOpsHeader).observe(pool, { attributes: true, attributeFilter: ['hidden'] });
+  syncOpsHeader();
+
   window.addEventListener('account:change', (e) => {
     const u = e.detail.user;
     const label = u?.displayName || u?.email || '';

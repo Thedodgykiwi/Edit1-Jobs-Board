@@ -161,8 +161,11 @@
               <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors &amp; suites</span>
             </button>
             <div class="editor-view-actions">
-              <button class="collapse-button" id="queueVisibilityButton" type="button" aria-controls="poolSection" aria-expanded="true" aria-keyshortcuts="E" title="Hide Job Queue card (E)">Hide queue</button>
-            <button class="collapse-button" id="editorsCollapseButton" type="button" aria-expanded="false" aria-controls="editorsPanel">
+              <!-- Issue #4: two small icon buttons; they click the board's own (hidden) buttons below -->
+              <button type="button" class="section-icon-btn" id="editorsIconButton" aria-controls="editorsPanel" aria-expanded="false" aria-label="Show editor list" title="Show editor list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1" /><circle cx="9" cy="8" r="3.5" /><path d="M22 19v-1a4 4 0 0 0-3-3.87M16 4.13a3.5 3.5 0 0 1 0 6.75" /></svg></button>
+              <button type="button" class="section-icon-btn" id="queueIconButton" aria-controls="poolSection" aria-pressed="true" aria-label="Show Job Queue" aria-keyshortcuts="E" title="Hide Job Queue (E)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4M4 13V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v7M4 13v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg></button>
+              <button class="collapse-button moved-to-menu" id="queueVisibilityButton" type="button" aria-controls="poolSection" aria-expanded="true" aria-keyshortcuts="E" title="Hide Job Queue card (E)">Hide queue</button>
+            <button class="collapse-button moved-to-menu" id="editorsCollapseButton" type="button" aria-expanded="false" aria-controls="editorsPanel">
               <span>Show editors</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
