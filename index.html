@@ -163,10 +163,14 @@
 
         <section class="operations" aria-labelledby="operationsTitle">
           <div class="section-heading">
+            <!-- Issue #17: title (tap = filter) + arrow that collapses the suites, like the Job Queue -->
+            <div class="suites-title-row">
             <button class="suite-filter-heading filter-all" id="suiteFilterButton" type="button" aria-label="Showing all suites. Tap to show free suites" aria-keyshortcuts="F">
               <span class="eyebrow" id="suiteFilterEyebrow">Tap title to filter · All</span>
               <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors &amp; suites</span>
             </button>
+            <button type="button" id="suitesCollapseToggle" class="suites-collapse-toggle" aria-controls="suiteGrid" aria-expanded="true" aria-label="Hide suites" title="Hide suites"><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button>
+            </div>
             <div class="editor-view-actions">
               <!-- Issue #4: two small icon buttons; they click the board's own (hidden) buttons below -->
               <button type="button" class="section-icon-btn" id="editorsIconButton" aria-controls="editorsPanel" aria-expanded="false" aria-label="Show editor list" title="Show editor list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1" /><circle cx="9" cy="8" r="3.5" /><path d="M22 19v-1a4 4 0 0 0-3-3.87M16 4.13a3.5 3.5 0 0 1 0 6.75" /></svg></button>

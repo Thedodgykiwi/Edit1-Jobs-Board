@@ -81,6 +81,20 @@
 
   $('ios-install').addEventListener('click', (e) => { if (e.target === $('ios-install') || e.target.closest('[data-close]')) $('ios-install').close(); });
 
+  // ---- Editors & suites collapse (issue #17): arrow beside the title, remembered per device and stage ----
+  const ops = document.querySelector('.operations');
+  const suitesToggle = $('suitesCollapseToggle');
+  const SUITES_KEY = `edit1:${window.STAGE || 'local'}:suites-collapsed`;
+  const setSuites = (collapsed) => {
+    ops.classList.toggle('suites-collapsed', collapsed);
+    suitesToggle.setAttribute('aria-expanded', String(!collapsed));
+    suitesToggle.title = suitesToggle.ariaLabel = collapsed ? 'Show suites' : 'Hide suites';
+    suitesToggle.setAttribute('aria-label', suitesToggle.title);
+    try { localStorage.setItem(SUITES_KEY, collapsed ? '1' : ''); } catch { /* storage blocked */ }
+  };
+  suitesToggle.addEventListener('click', () => setSuites(!ops.classList.contains('suites-collapsed')));
+  try { setSuites(localStorage.getItem(SUITES_KEY) === '1'); } catch { setSuites(false); }
+
   window.addEventListener('account:change', (e) => {
     const u = e.detail.user;
     const label = u?.displayName || u?.email || '';

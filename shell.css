@@ -187,3 +187,16 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
    card, so they line up across a row whatever the content above them */
 #plannedJobs .job-card { display: flex; flex-direction: column; }
 #plannedJobs .job-card > .job-actions { margin-top: auto; }
+
+/* Editors & suites collapse (issue #17): arrow sits on the title's line, like the Job Queue's */
+.suites-title-row { display: flex; align-items: flex-end; gap: .55rem; min-width: 0; }
+.suites-collapse-toggle { flex: none; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; border-radius: 8px; }
+.suites-collapse-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.suites-collapse-toggle[aria-expanded="true"] .queue-chevron { transform: rotate(180deg); }
+.suites-collapse-toggle:hover .queue-chevron { color: var(--text); border-color: var(--muted-2); }
+.operations.suites-collapsed #suiteGrid, .operations.suites-collapsed #editorsPanel { display: none !important; }
+.operations.suites-collapsed > .section-heading { margin-bottom: 0; }
+/* Editor-list and queue icons sit on the same line as the title and arrow */
+.operations > .section-heading { align-items: flex-end !important; }
+.suites-collapse-toggle { margin-bottom: -2px; }
+.operations .editor-view-actions { margin-bottom: -6px; }
