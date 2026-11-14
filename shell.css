@@ -122,3 +122,6 @@
 .section-icon-btn[aria-expanded="true"] { background: var(--panel-2); border-color: var(--muted-2); }
 .section-icon-btn[aria-pressed="false"] { color: var(--muted-2); border-style: dashed; }
 .operations > .section-heading { flex-wrap: nowrap; align-items: flex-start; }
+
+/* iPhone: if Safari still wraps an email in a link, keep it plain (issue #5) */
+.profile-who a, .profile-who a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
