@@ -104,9 +104,10 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 |---|---|
 | `index.html` | The board's markup + stage banner + sign-in panel |
 | `board.js` | The board (original `app.js`): rendering, jobs, suites, editors, checklist, history search UI |
-| `board.css` | The board's own look, incl. its light/dark theme (`html[data-theme]`) |
+| `board.css` | The board's original styles, incl. its light/dark theme (`html[data-theme]`) |
+| `playbook-look.css` | The playbook look on top of `board.css` (issue #1): kit colours, one font, flat cards, phone header. Restyle here, not by editing markup |
 | `cloud.js` | Firestore storage (`window.Edit1Cloud`) + sign-in gate / access check |
-| `shell.js`, `shell.css` | Stage banner, signed-in account in Settings, sign-in panel styles |
+| `shell.js`, `shell.css` | Stage banner, sign-in panel styles, and the profile menu (Google photo → theme, Board settings, Sign out). The board's own theme/settings buttons are hidden (`.moved-to-menu`) but still drive the board; the menu clicks them |
 | `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
 | `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`) |
 
