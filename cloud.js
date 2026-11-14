@@ -49,7 +49,13 @@ function unwatchBoardsExcept(path) {
 }
 
 async function readDoc(ref) {
-  const snap = await fsApi.fs.getDocFromServer(ref);
+  let snap;
+  try { snap = await fsApi.fs.getDocFromServer(ref); }
+  catch (err) {
+    // Offline (issue #8): show the copy saved on this device, if there is one.
+    if (err?.code !== 'unavailable') throw err;
+    snap = await fsApi.fs.getDocFromCache(ref).catch(() => { throw err; });
+  }
   if (!snap.exists()) return { data: null, revision: 0, mutationId: null };
   const d = snap.data();
   return { data: JSON.parse(d.payload), revision: d.revision, mutationId: d.mutationId };
@@ -247,7 +253,12 @@ let started = false;
     user = u;
     showGate('Checking access…');
     try {
-      await fsApi.fs.getDocFromServer(fsApi.fs.doc(fsApi.db, 'access', 'members'));
+      const membersRef = fsApi.fs.doc(fsApi.db, 'access', 'members');
+      // Offline (issue #8): trust this device's saved copy of the access check.
+      await fsApi.fs.getDocFromServer(membersRef).catch((err) => {
+        if (err?.code !== 'unavailable') throw err;
+        return fsApi.fs.getDocFromCache(membersRef).catch(() => { throw err; });
+      });
     } catch (err) {
       showGate(err?.code === 'permission-denied'
         ? `${u.email} isn't on this board's access list. Ask the board's owner to add you, then reload.`

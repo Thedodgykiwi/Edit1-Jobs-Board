@@ -79,6 +79,8 @@
   new MutationObserver(syncOpsHeader).observe(pool, { attributes: true, attributeFilter: ['hidden'] });
   syncOpsHeader();
 
+  $('ios-install').addEventListener('click', (e) => { if (e.target === $('ios-install') || e.target.closest('[data-close]')) $('ios-install').close(); });
+
   window.addEventListener('account:change', (e) => {
     const u = e.detail.user;
     const label = u?.displayName || u?.email || '';

@@ -107,6 +107,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 | `board.css` | The board's original styles, incl. its light/dark theme (`html[data-theme]`) |
 | `playbook-look.css` | The playbook look on top of `board.css` (issue #1): kit colours, one font, flat cards, phone header. Restyle here, not by editing markup |
 | `cloud.js` | Firestore storage (`window.Edit1Cloud`) + sign-in gate / access check |
+| `pwa.js`, `sw.js` | Works offline, Install app (profile menu + one-time tip), "A new version is ready · Reload" bar. From the playbook starter |
 | `whatsnew.js` | Version + "What's new" at the bottom of the profile menu, from the deploy's `releases.json` (ported from the starter's menu.js). The board's old built-in changelog button is hidden |
 | `shell.js`, `shell.css` | Stage banner, sign-in panel styles, and the profile menu (Google photo → theme, Board settings, Sign out). The board's own theme/settings buttons are hidden (`.moved-to-menu`) but still drive the board; the menu clicks them. Also the Job Queue header (issue #3): the title opens/closes the queue and a Cards / List switch sets compact cards, driving the hidden `#poolCollapseButton` / `#compactQueueQuickToggle`. Editors & suites header (issue #4): two icon buttons (editor list, Job Queue show/hide) drive the hidden `#editorsCollapseButton` / `#queueVisibilityButton`. Suite cards (issue #6) flow down columns (3 / 2 below 1260px / 1 below 800px), each only as tall as its content |
 | `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
@@ -121,7 +122,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 - History search runs in the browser over all saved days (`cloud.js`
   `search`/`facets`, a port of the old SQL in the reference zip).
 - Display settings stay per device (localStorage); unsaved-draft keys are per stage.
-- No offline mode / install prompt yet (starter's `pwa.js`/`sw.js` not wired in).
+- Offline + install + "new version ready" bar (issue #8): `pwa.js` / `sw.js` from the starter. Offline, `cloud.js` falls back to the copy saved on the device (read-only in practice: saves need a connection), and the board's sync line is hidden behind the offline strip.
 - Browser storage is shared by all stages and apps on `thedodgykiwi.github.io`: key it per app and stage.
 
 ## Firebase (set up 2026-11-14)

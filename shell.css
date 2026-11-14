@@ -139,3 +139,25 @@
 @media (max-width: 800px) { .suite-grid { columns: 1; } }
 /* ...but not the "Nobody busy / free / assigned" message: keep its own centred layout (issue #7) */
 .suite-grid > .empty-state { display: grid; margin: 0; }
+
+/* Offline + install + new version (pwa.js, issue #8), as in the playbook starter */
+.offline-strip { position: sticky; top: 0; z-index: 30; padding: .4rem 1rem; text-align: center; font-size: .82rem; font-weight: 600; background: #fff4e6; color: #8a4400; border-bottom: 1px solid #ffd8a8; }
+html[data-theme="dark"] .offline-strip { background: #3d2a12; color: #ffc078; border-color: #5c3d14; }
+.install-btn { color: var(--cyan); font-weight: 600; }
+.offline-ready { margin: 0; text-align: center; font-size: .76rem; color: var(--green); }
+.steps { margin: .4rem 0 .8rem; padding-left: 1.3rem; line-height: 1.7; }
+.install-tip, .update-bar {
+  position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 45;
+  width: min(440px, calc(100vw - 1.5rem)); display: flex; align-items: center; gap: .6rem;
+  padding: .7rem .8rem; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.3); font-size: .88rem;
+}
+.install-tip { background: #1d1f23; color: #fff; }
+.install-tip p { margin: 0; display: grid; gap: .1rem; flex: 1; }
+.install-tip p span { color: #ced4da; font-size: .8rem; }
+.install-tip button, .update-bar button { border: 0; border-radius: 8px; font: inherit; cursor: pointer; }
+.install-tip-go { background: #74c0fc; color: #04213d; font-weight: 700; padding: .4rem .8rem; white-space: nowrap; }
+.install-tip-x { background: none; color: #adb5bd; padding: .3rem .5rem; }
+.update-bar { background: var(--cyan); color: #fff; justify-content: space-between; }
+html[data-theme="dark"] .update-bar { color: #032b30; }
+.update-bar button { background: var(--panel); color: var(--text); font-weight: 700; padding: .35rem .8rem; }
+body.is-offline #syncBar { display: none; }   /* the offline strip explains instead of "Up to date" */
