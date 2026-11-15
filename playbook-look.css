@@ -42,6 +42,8 @@ html[data-theme="dark"] .button-primary { color: #032b30 !important; }
 /* Topbar: no gradient */
 .topbar { background: none !important; }
 #syncBar { font-size: .8rem; }
+/* Breathing room between New job (+) and the profile photo */
+.topbar-actions .profile { margin-left: .5rem; }
 /* Phone: keep the header on one row with nothing cut off */
 @media (max-width: 600px) {
   .topbar { gap: .5rem !important; }
