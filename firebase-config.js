@@ -9,3 +9,8 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: '255253263372',
   appId: '1:255253263372:web:543f231296af4962f72a29',
 };
+
+// "Report issue" on the test stages' banner (report.js, issue #27; playbook
+// report-issue.md). Needs the issueReports rules, access/testers and the
+// GitHub secrets.
+window.REPORT_ISSUES = true;
