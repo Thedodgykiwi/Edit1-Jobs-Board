@@ -1518,7 +1518,7 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
 #report-link:hover, #report-link[aria-expanded="true"] { background: rgba(0, 0, 0, .3); }
 #report-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .report-box {
-  position: fixed; z-index: 11; top: 2.6rem; left: .6rem; width: min(26rem, calc(100vw - 1.2rem));
+  position: fixed; z-index: 60;   /* above the sign-in gate (50) */ top: 2.6rem; left: .6rem; width: min(26rem, calc(100vw - 1.2rem));
   max-height: calc(100dvh - 3.4rem); overflow-y: auto;
   background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .25); padding: .9rem 1rem 1rem;

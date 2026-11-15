@@ -119,6 +119,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 | `whatsnew.js` | Version + "What's new" at the bottom of the profile menu, from the deploy's `releases.json` (ported from the starter's menu.js). The board's old built-in changelog button is hidden |
 | `shell.js` | Stage banner, the profile menu (Google photo → theme, Board settings, Sign out), the Job Queue header (issue #3: title opens/closes, Cards / List switch), the Editors & suites header (issue #4: editor-list and Job Queue icons; issue #17: collapse arrow, remembered per device and stage) and the suite-card columns (issue #6: 3 / 2 below 1260px / 1 below 800px). These controls call the board directly through `window.Edit1Board` (setTheme, openSettings, togglePool, toggleEditors, toggleQueueShown, setCompactQueueCards) and follow its `board:ui` event (issue #22); the board's old buttons for them have been removed |
 | `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
+| `report.js` | "Report issue" on the test stages' banner (issue #27): a copy of the playbook starter's, with Edit 1's buttons and inline icons; on via `window.REPORT_ISSUES` in `firebase-config.js`. Its drop-down sits above the sign-in gate (z-index 60) so testers can report even when locked out. Reports → `issueReports` (rules + tests), testers in `access/testers`; `.github/workflows/issue-reports.yml` runs the playbook's shared job (`report-issue.md`). Secrets: `FIREBASE_SERVICE_ACCOUNT` (this project), `GMAIL_USER`, `GMAIL_APP_PASSWORD` |
 | `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`), and a check of the board's main features against the emulators (`npm run test:board`, issue #21; needs Playwright) |
 
 - `board.js` must load **after** `cloud.js` (it's `defer`, cloud.js is a module; both run in order).
@@ -142,6 +143,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 - Data: `stages/{stage}/boards/{YYYY-MM-DD}` (shared board per day),
   `stages/{stage}/tasks/{uid}` (each person's checklist). Each doc:
   `payload` (JSON text), `revision`, `mutationId`, `updatedAt`, `updatedBy`.
+- **Who can send "Report issue" reports:** `access/testers` (field `emails`, lower case), separate from the members list. Never in the repo.
 - **Who can use it:** the `access/members` document, field `emails` (array
   of lower-case addresses). Edit it in the Firebase console (Firestore →
   access → members). Never put the addresses in the repo.

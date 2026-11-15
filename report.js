@@ -64,7 +64,7 @@
     const user = cloud.user();
     if (!user) {
       box.innerHTML = `${head}<p class="report-note">Sign in with Google to report an issue. Reports are open to testers only.</p>
-        <button type="button" class="button-primary report-send" data-signin>Sign in</button>`;
+        <button type="button" class="button button-primary report-send" data-signin>Sign in</button>`;
       box.querySelector('[data-signin]').onclick = () => { close(); cloud.signIn(); };
       return;
     }
@@ -82,7 +82,7 @@
         </div>
         <p class="report-note">Logged from <b>${STAGE_NAMES[stage] || esc(stage)}</b>. We'll email a copy to ${esc(user.email)}.</p>
         <p class="report-msg" data-error aria-live="polite"></p>
-        <button class="button-primary report-send" data-send>Submit</button>
+        <button class="button button-primary report-send" data-send>Submit</button>
       </form>`;
     const f = box.querySelector('form');
     const title = f.querySelector('#report-title');
@@ -120,7 +120,7 @@
           <div class="report-tick">${ic('check-circle')}</div>
           <p><b>Thanks! Your report is in.</b></p>
           <p class="report-note">We'll email you a copy shortly.</p>
-          <button type="button" class="report-done-btn" data-close>Done</button></div>`;
+          <button type="button" class="button button-ghost report-done-btn" data-close>Done</button></div>`;
         box.querySelector('.report-done [data-close]').focus();
       } catch (e2) {
         send.disabled = false; send.textContent = 'Submit';
