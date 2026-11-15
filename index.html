@@ -50,14 +50,8 @@
         <div class="brand-lockup">
           <button class="brand-mark" id="daySheetButton" type="button" aria-label="Open Day Sheet" aria-keyshortcuts="D" title="Day Sheet (D)"><span>E</span><strong>1</strong></button>
           <div class="brand-title-row">
-            <h1>Edit 1 <span>Job Board</span></h1>
-            <button class="supervisor-todo-button" id="todoButton" type="button" aria-label="Open current tasks" aria-keyshortcuts="C" title="Current tasks (C) · Full checklist (T)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7" /></svg>
-              <span class="todo-count" id="todoCount" hidden>0</span>
-            </button>
-            <button class="supervisor-todo-button wheel-launch-button" id="wheelButton" type="button" aria-label="Spin that wheel" aria-keyshortcuts="W" title="Spin that wheel (W)" aria-haspopup="dialog">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7m0 4v7M3 12h7m4 0h7M5.6 5.6l5 5m2.8 2.8 5 5M5.6 18.4l5-5m2.8-2.8 5-5"/></svg>
-            </button>
+            <!-- Issue #26: two lines, "Edit 1" bold over a lighter "Job Board" -->
+            <h1><span class="brand-name">Edit 1</span> <span class="brand-sub">Job Board</span></h1>
           </div>
         </div>
 
@@ -67,6 +61,14 @@
             <strong id="liveClock">--:--</strong>
           </div>
           <div class="live-badge" id="dayScopeBadge"><i></i> Today</div>
+          <!-- Issue #26: tasks and wheel sit with the other header buttons -->
+          <button class="supervisor-todo-button" id="todoButton" type="button" aria-label="Open current tasks" aria-keyshortcuts="C" title="Current tasks (C) · Full checklist (T)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7" /></svg>
+            <span class="todo-count" id="todoCount" hidden>0</span>
+          </button>
+          <button class="supervisor-todo-button wheel-launch-button" id="wheelButton" type="button" aria-label="Spin that wheel" aria-keyshortcuts="W" title="Spin that wheel (W)" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7m0 4v7M3 12h7m4 0h7M5.6 5.6l5 5m2.8 2.8 5 5M5.6 18.4l5-5m2.8-2.8 5-5"/></svg>
+          </button>
           <button class="button button-primary" id="newJobButton" type="button" aria-label="New job" aria-keyshortcuts="N" title="New job (N)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             New job

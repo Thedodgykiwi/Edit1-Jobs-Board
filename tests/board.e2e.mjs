@@ -172,6 +172,14 @@ await check('editor-list icon and Job Queue icon work, and stay in step with key
   await p.click('[data-queue-view=cards]');
   ok(!(await p.isChecked('#compactQueueCards')), 'Board settings not in step with Cards/List switch');
 });
+await check('header: tasks and wheel buttons open their windows', async () => {
+  await p.click('#todoButton'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.getElementById('todoDialog').open), 'tasks window did not open');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.click('#wheelButton'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.getElementById('wheelDialog').open), 'wheel window did not open');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+});
 await check('changes are still there after a reload', async () => {
   await p.reload(); await upToDate();
   ok(await where('Weather promo') === 'job queue', 'Weather promo moved');
@@ -181,6 +189,8 @@ await check('changes are still there after a reload', async () => {
 await check('phone width: nothing scrolls sideways', async () => {
   await p.setViewportSize({ width: 375, height: 800 }); await p.waitForTimeout(400);
   ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'page wider than the phone');
+  const title = await p.evaluate(() => { const h = document.querySelector('.brand-title-row h1').getBoundingClientRect(); const t = document.getElementById('todoButton').getBoundingClientRect(); return { titleRight: h.right, toolsLeft: t.left }; });
+  ok(title.titleRight <= title.toolsLeft, 'header title runs under the buttons on a phone');
 });
 await check('no errors in the browser console', async () => { ok(!errors.length, errors.join(' | ')); });
 

@@ -1493,3 +1493,14 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
 .operations > .section-heading { align-items: flex-end; }
 .suites-collapse-toggle { margin-bottom: -2px; }
 .operations .editor-view-actions { margin-bottom: -6px; }
+
+/* Header title and tools (issue #26): "Edit 1" bold over a lighter "Job Board" on
+   every screen size; tasks and wheel sit with the other header buttons. */
+.brand-title-row h1 { display: flex; flex-direction: column; margin: 0; line-height: 1.15; font-size: 1.25rem; white-space: nowrap; }
+.brand-title-row h1 .brand-name { font-weight: 700; color: var(--text); }
+.brand-title-row h1 .brand-sub { font-weight: 400; color: var(--muted); }
+.topbar-actions .supervisor-todo-button { width: 2.6rem; height: 2.6rem; border-radius: 10px; flex: none; }
+@media (max-width: 600px) {
+  .brand-title-row h1 { font-size: 1.1rem; }
+  .topbar-actions .supervisor-todo-button { width: 2.3rem; height: 2.3rem; }
+}
