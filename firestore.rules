@@ -44,5 +44,29 @@ service cloud.firestore {
       allow get: if member() && validStage(stage) && request.auth.uid == uid;
       allow create, update: if member() && validStage(stage) && request.auth.uid == uid && validSave();
     }
+
+    // "Report issue" (issue #27; playbook report-issue.md): testers add a
+    // report; nobody reads, edits or deletes reports from the app (a GitHub
+    // Action with admin access turns them into issues and emails the tester).
+    // Testers list: access/testers { emails: [lower-case addresses] }, edited
+    // in the Firebase console, never in the repo; not readable from the app.
+    function tester() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/access/testers)
+        && request.auth.token.email.lower() in get(/databases/$(database)/documents/access/testers).data.emails;
+    }
+    match /issueReports/{reportId} {
+      allow create: if tester()
+        && request.resource.data.keys().hasOnly(['title', 'body', 'type', 'stage', 'uid', 'email', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['title', 'body', 'type', 'stage', 'uid', 'email', 'status', 'createdAt'])
+        && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 5000
+        && (request.resource.data.type == null || request.resource.data.type in ['bug', 'feature', 'tweak', 'performance'])
+        && validStage(request.resource.data.stage)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'new'
+        && request.resource.data.createdAt == request.time;
+    }
   }
 }
