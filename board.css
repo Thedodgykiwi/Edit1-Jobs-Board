@@ -1504,3 +1504,58 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
   .brand-title-row h1 { font-size: 1.1rem; }
   .topbar-actions .supervisor-todo-button { width: 2.3rem; height: 2.3rem; }
 }
+
+/* "Report issue" (report.js, issue #27; playbook report-issue.md): same pill as Pipeline, at the banner's left end,
+   opening a drop-down card just under the banner (report.js). */
+#report-link {
+  position: absolute; left: .6rem; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: .3rem; border: 0; cursor: pointer; font: inherit;
+  color: #fff; font-size: .75rem; letter-spacing: .02em; font-weight: 600;
+  padding: .15rem .5rem; border-radius: 999px; background: rgba(0, 0, 0, .18);
+}
+#report-link .ic { width: 1em; height: 1em; }
+@media (max-width: 420px) { #report-link .wide-only { display: none; } }   /* phones: "Report" only, so the stage name fits */
+#report-link:hover, #report-link[aria-expanded="true"] { background: rgba(0, 0, 0, .3); }
+#report-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.report-box {
+  position: fixed; z-index: 11; top: 2.6rem; left: .6rem; width: min(26rem, calc(100vw - 1.2rem));
+  max-height: calc(100dvh - 3.4rem); overflow-y: auto;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25); padding: .9rem 1rem 1rem;
+}
+.report-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.report-head h2 { font-size: 1.05rem; margin: 0; }
+.report-box form { display: flex; flex-direction: column; gap: .3rem; }
+.report-box label, .report-label { font-size: .82rem; font-weight: 600; margin: .2rem 0 0; }
+.report-label span { color: var(--muted); font-weight: 400; }
+.report-box input, .report-box textarea {
+  width: 100%; font: inherit; font-size: 1rem; padding: .5rem .6rem; color: var(--text);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+}
+.report-box textarea { resize: vertical; min-height: 6rem; }
+.report-box .bad { border-color: var(--red); }
+.report-msg { color: var(--red); font-size: .78rem; margin: 0; min-height: 0; }
+.report-msg:empty { display: none; }
+.report-types { display: flex; flex-wrap: wrap; gap: .35rem; }
+.report-pill {
+  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  border-radius: 999px; padding: .3rem .75rem; font: inherit; font-size: .82rem; cursor: pointer;
+}
+.report-pill[aria-pressed="true"] { background: var(--cyan); color: #032b30; border-color: var(--cyan); }
+.report-note { font-size: .8rem; color: var(--muted); margin: .4rem 0; }
+.report-box .report-send { align-self: flex-start; margin-top: .3rem; }
+.report-close {
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--panel-2); color: var(--text);
+}
+.report-close .ic { width: 1.1rem; height: 1.1rem; }
+.report-close:hover { background: var(--line); }
+.report-done-btn {
+  border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer;
+  border-radius: 10px; padding: .5rem 1.1rem; font: inherit; font-weight: 600;
+}
+.report-done-btn:hover { background: var(--panel-2); }
+.report-done { text-align: center; padding: .3rem 0 .2rem; }
+.report-done p { margin: .3rem 0; }
+.report-tick .ic { width: 2.4rem; height: 2.4rem; color: var(--cyan); }
