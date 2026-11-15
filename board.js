@@ -1096,8 +1096,6 @@
 
   function renderCollapseState() {
     const poolSection = document.getElementById("poolSection");
-    const poolButton = document.getElementById("poolCollapseButton");
-    const editorsButton = document.getElementById("editorsCollapseButton");
     const completedSection = document.getElementById("completedSection");
     const completedButton = document.getElementById("completedCollapseButton");
     const biffedSection = document.getElementById("biffedSection");
@@ -1111,17 +1109,9 @@
 
     poolSection.hidden = uiState.poolHidden;
     document.getElementById("showJobQueueCard").checked = !uiState.poolHidden;
-    const queueVisibilityButton = document.getElementById("queueVisibilityButton");
-    queueVisibilityButton.textContent = uiState.poolHidden ? "Show queue" : "Hide queue";
-    queueVisibilityButton.setAttribute("aria-expanded", String(!uiState.poolHidden));
-    queueVisibilityButton.title = `${uiState.poolHidden ? "Show" : "Hide"} Job Queue card (E)`;
     poolSection.classList.toggle("collapsed", uiState.poolCollapsed);
-    poolButton.setAttribute("aria-expanded", String(!uiState.poolCollapsed));
-    poolButton.querySelector("span").textContent = uiState.poolCollapsed ? `Show ${poolTotal} ${poolTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
 
     editorsPanel.classList.toggle("collapsed-content", uiState.editorsCollapsed);
-    editorsButton.setAttribute("aria-expanded", String(!uiState.editorsCollapsed));
-    editorsButton.querySelector("span").textContent = uiState.editorsCollapsed ? `Show ${editors().length} editors` : "Hide editors";
 
     completedSection.classList.toggle("collapsed", uiState.completedCollapsed);
     completedButton.setAttribute("aria-expanded", String(!uiState.completedCollapsed));
@@ -1130,13 +1120,13 @@
     biffedSection.classList.toggle("collapsed", uiState.biffedCollapsed);
     biffedButton.setAttribute("aria-expanded", String(!uiState.biffedCollapsed));
     biffedButton.querySelector("span").textContent = uiState.biffedCollapsed ? `Show ${biffedTotal} ${biffedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    announceUi();
   }
 
   function renderSettingsState() {
     document.getElementById("emptySuitePresentation").value = uiState.emptySuitePresentation;
     document.getElementById("compactSuites").checked = uiState.compactSuites;
     document.getElementById("compactQueueCards").checked = uiState.compactQueueCards;
-    document.getElementById("compactQueueQuickToggle").checked = uiState.compactQueueCards;
     document.getElementById("sectionStartup").value = uiState.sectionStartup;
     document.getElementById("queueSort").value = uiState.queueSort;
     document.getElementById("dueWarningMinutes").value = String(uiState.dueWarningMinutes);
@@ -1159,8 +1149,37 @@
     setQueueVisibility(uiState.poolHidden);
   }
 
-  document.getElementById("queueVisibilityButton").addEventListener("click", toggleQueueVisibility);
   document.getElementById("showJobQueueCard").addEventListener("change", (event) => setQueueVisibility(event.target.checked));
+
+  // ---- Board commands for the page shell (issue #22) ----------------------
+  // shell.js (profile menu, Job Queue / Editors & suites headers) calls these
+  // directly, and listens for "board:ui" to keep its controls in step.
+  function uiSnapshot() {
+    return {
+      theme: uiState.theme,
+      poolCollapsed: uiState.poolCollapsed,
+      poolHidden: uiState.poolHidden,
+      editorsCollapsed: uiState.editorsCollapsed,
+      compactQueueCards: uiState.compactQueueCards,
+    };
+  }
+  function announceUi() {
+    document.dispatchEvent(new CustomEvent("board:ui", { detail: uiSnapshot() }));
+  }
+  window.Edit1Board = {
+    ui: uiSnapshot,
+    setTheme(mode) {
+      if (!["auto", "light", "dark"].includes(mode)) return;
+      uiState.theme = mode;
+      saveUiState();
+      applyTheme();
+    },
+    openSettings: () => settingsDialog.showModal(),
+    togglePool: () => toggleSection("pool"),
+    toggleEditors: () => toggleSection("editors"),
+    toggleQueueShown: () => toggleQueueVisibility(),
+    setCompactQueueCards: (on) => setCompactQueueCards(Boolean(on)),
+  };
 
   function toggleSection(section) {
     if (section === "pool") uiState.poolCollapsed = !uiState.poolCollapsed;
@@ -1175,24 +1194,7 @@
     const prefersDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
     const resolved = uiState.theme === "auto" ? (prefersDark ? "dark" : "light") : uiState.theme;
     document.documentElement.dataset.theme = resolved;
-    const mode = uiState.theme[0].toUpperCase() + uiState.theme.slice(1);
-    const button = document.getElementById("themeButton");
-    const icon = document.getElementById("themeIcon");
-    document.getElementById("themeMode").textContent = mode;
-    button.setAttribute("aria-label", `Theme: ${mode}. Change theme`);
-    button.title = `Theme: ${mode}`;
-    icon.innerHTML = uiState.theme === "light"
-      ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>'
-      : uiState.theme === "dark"
-        ? '<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/>'
-        : '<path d="M4 5h16v12H4zM8 21h8M12 17v4"/>';
-  }
-
-  function cycleTheme() {
-    const modes = ["auto", "light", "dark"];
-    uiState.theme = modes[(modes.indexOf(uiState.theme) + 1) % modes.length];
-    saveUiState();
-    applyTheme();
+    announceUi();
   }
 
   function renderSummary() {
@@ -1461,7 +1463,6 @@
     poolCount.textContent = String(jobs.length);
     plannedJobs.classList.toggle("is-empty", !jobs.length);
     plannedJobs.classList.toggle("compact-job-cards", uiState.compactQueueCards);
-    document.getElementById("compactQueueQuickToggle").checked = uiState.compactQueueCards;
 
     if (!jobs.length) {
       plannedJobs.innerHTML = `
@@ -2897,47 +2898,6 @@
     detailDialog.close();
     openNewJobDialog(true);
   });
-  document.getElementById("settingsButton").addEventListener("click", () => settingsDialog.showModal());
-  document.getElementById("releaseNotesButton").addEventListener("click", () => {
-    settingsDialog.close();
-    document.getElementById("detailEyebrow").textContent = "Release history";
-    document.getElementById("detailTitle").textContent = "What’s new · v1.46.5";
-    document.getElementById("detailAddJobButton").hidden = true;
-    detailList.innerHTML = `<div class="editor-history release-history"><details open><summary>v1.35.1 · Mobile header <span>Current release</span></summary><div class="release-items"><div class="detail-row"><div class="detail-copy"><strong>One-row mobile controls</strong><span>The New job button is now a compact plus on mobile, keeping the checklist, theme and settings controls together.</span></div></div></div></details><details><summary>Previous releases <span>Open archive</span></summary><div class="release-items"><details><summary>v1.35 · Supervisor checklist</summary><div class="release-copy">Added rapid supervisor tasks, optional notes, cross-off and restore controls, keyboard access, and unfinished reminders that carry across dates and devices.</div></details><details><summary>v1.34 · Shift handover</summary><div class="release-copy">Added a one-page night-shift handover PDF with editors, running work, coming-up jobs and bullet notes.</div></details><details><summary>v1.33 · Fast-moving edit floor</summary><div class="release-copy">Added Fast Track jobs, Edit 1 concurrent work, time-based Day Pulse charts and editor drill-downs, break events in job history, and the Assigned suites filter.</div></details><details><summary>v1.32 · Supervisor workflow</summary><div class="release-copy">Added Edit 1 admin work, optional due times, improved job action layout and individual job history.</div></details><details><summary>v1.31 · Live floor control</summary><div class="release-copy">Introduced compact suite cards, queued and parked work, break handling, suite availability states, and clearer free/busy views.</div></details><details><summary>v1.30 · Planning and visibility</summary><div class="release-copy">Added the Day Sheet, rich paste and editing, queue sorting, priority treatments, editor activity and completed work filters.</div></details><details><summary>v1.20 · The working board</summary><div class="release-copy">Established the Job Queue, editor-to-suite assignment, sending work to edit, status cards, and completed and biffed archives.</div></details><details><summary>v1.00 · Edit 1 Job Board</summary><div class="release-copy">The original same-day newsroom planning board: incoming jobs, Edit 1 control desk, live suites and a record of the day’s output.</div></details></div></details></div>`;
-    const releaseSections = detailList.querySelectorAll(":scope > .release-history > details");
-    releaseSections[0].querySelector("summary").innerHTML = "v1.46.5 · Grabs / Olay / Openers <span>Current release</span>";
-    releaseSections[0].querySelector(".release-items").innerHTML = '<div class="detail-row"><div class="detail-copy"><strong>Updated edit format name</strong><span>Renamed Olay &amp; Openers to Grabs / Olay / Openers in the job format selectors, while keeping existing jobs editable.</span></div></div>';
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.46.4 · Light-mode queue polish</summary><div class="release-copy">Matched the compact-card switch to Light mode and stabilized the Job Queue title row as the queue opens and closes.</div></details><details><summary>v1.46.2 · Bold job titles</summary><div class="release-copy">Fixed suite job-title styling so running and queued titles remain bold beside lighter format and category details.</div></details><details><summary>v1.46.1 · Stronger job titles</summary><div class="release-copy">Strengthened job-title styling across queue and suite cards.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.46 · Compact Job Queue</summary><div class="release-copy">Added a compact queue-card view that keeps titles, categories, priorities, reporters, urgency and job actions visible while hiding notes, edit formats and editor assignment controls.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.6 · Quick-open shortcuts</summary><div class="release-copy">Press N for New Job, D for the Day Sheet, or H to jump directly into the handover creator.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.5 · Board shortcuts</summary><div class="release-copy">Press J to toggle the Job Queue and B to open the Busy editors &amp; jobs window.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.4 · Suite filter shortcut</summary><div class="release-copy">Press F to cycle the Editors &amp; suites view through All, Free, Busy and Assigned.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.3 · Compact suite assignments</summary><div class="release-copy">Pre-assigned work appears beneath the editor name as Free · job assigned, removing the larger centred divider while preserving the normal Coming up next treatment for sent jobs.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.2 · Free-editor assignments</summary><div class="release-copy">The Free editors window mirrors the board with an amber strip, outline and assigned-job count for editors who have planned work in the main queue.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.1 · Assigned-work visibility</summary><div class="release-copy">Free editors with jobs pre-assigned in the main queue keep their green Free status while gaining an amber suite outline, strip and assigned-job count.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45 · Off Rota work</summary><div class="release-copy">Added the Off Rota priority and a muted suite treatment for editors running special-project work outside normal daily news editing.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.44 · Suite job details</summary><div class="release-copy">Tap the title of a running or queued suite job to view its category, format, priority, due time, reporter and full brief note.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.43 · Documentary format</summary><div class="release-copy">Added Documentary as an edit format for new, Fast Track and existing jobs.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.42.2 · Star priority</summary><div class="release-copy">Kept starred tasks above regular tasks regardless of reminder time, while retaining chronological order inside each group.</div></details><details><summary>v1.42.1 · Reminder ordering</summary><div class="release-copy">Ordered open tasks from the earliest reminder to the latest, with untimed tasks at the bottom.</div></details><details><summary>v1.42 · Protected suite work</summary><div class="release-copy">Booking and Special work now uses purple suite, live-job and queued-job treatments to mark work that must not be interrupted.</div></details><details><summary>v1.41.1 · Mobile suite alignment</summary><div class="release-copy">Aligned staffed suite labels and status with the unused suite cards on compact mobile layouts.</div></details><details><summary>v1.41 · Task reminders</summary><div class="release-copy">Added task editing and optional timed reminders with custom dismiss and complete controls.</div></details><details><summary>v1.40.1 · Checklist wording</summary><div class="release-copy">Simplified the checklist heading to Edit 1.</div></details><details><summary>v1.40 · Daily task logs</summary><div class="release-copy">Bound tasks to the selected board date, stopped unfinished work carrying forward, and retained completed tasks as a daily record.</div></details><details><summary>v1.36 · Rapid task entry</summary><div class="release-copy">Added bulk task entry from dashed note lines, with an optional trailing * to star important items immediately.</div></details><details><summary>v1.35.5 · Priority task styling</summary><div class="release-copy">Made starred tasks brighter and more distinct with a matching outline and subtle elevation.</div></details><details><summary>v1.35.4 · Starred tasks</summary><div class="release-copy">Added persistent task starring so important open items remain above the rest.</div></details><details><summary>v1.35.3 · Quicker job entry</summary><div class="release-copy">Made No due time the default for new jobs while retaining optional deadlines.</div></details><details><summary>v1.35.2 · Mobile job entry</summary><div class="release-copy">Kept the New job window within the usable device height, with a fixed header and actions while job details scroll.</div></details><details><summary>v1.35.1 · Mobile header</summary><div class="release-copy">Changed New job to a compact plus on mobile so the checklist, theme and settings controls remain on one row.</div></details>');
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.43")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.44")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45.1")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45.2")));
-    const previousReleases = releaseSections[1].querySelector(".release-items");
-    const release146 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46 ·"));
-    const release1461 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.1 ·"));
-    const release1462 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.2 ·"));
-    const release1464 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.4 ·"));
-    const release1463 = document.createElement("details");
-    release1463.innerHTML = '<summary>v1.46.3 · Compact toggle polish</summary><div class="release-copy">Moved the compact-card switch into the open Job Queue header and refined its shape and label.</div>';
-    if (release146) previousReleases.prepend(release146);
-    if (release1461) previousReleases.prepend(release1461);
-    if (release1462) previousReleases.prepend(release1462);
-    previousReleases.prepend(release1463);
-    if (release1464) previousReleases.prepend(release1464);
-    detailDialog.showModal();
-  });
   document.getElementById("daySheetButton").addEventListener("click", openDaySheet);
   document.getElementById("editDaySheetButton").addEventListener("click", () => setDaySheetMode(true));
   document.getElementById("saveDaySheetButton").addEventListener("click", saveDaySheet);
@@ -2952,8 +2912,6 @@
     event.preventDefault();
     insertDaySheetHtml(html || escapeHtml(text).replace(/\n/g, "<br>"));
   });
-  document.getElementById("poolCollapseButton").addEventListener("click", () => toggleSection("pool"));
-  document.getElementById("editorsCollapseButton").addEventListener("click", () => toggleSection("editors"));
   document.getElementById("suiteFilterButton").addEventListener("click", cycleSuiteFilter);
   document.getElementById("completedCollapseButton").addEventListener("click", () => toggleSection("completed"));
   document.getElementById("biffedCollapseButton").addEventListener("click", () => toggleSection("biffed"));
@@ -2970,12 +2928,11 @@
   function setCompactQueueCards(enabled) {
     uiState.compactQueueCards = enabled;
     document.getElementById("compactQueueCards").checked = enabled;
-    document.getElementById("compactQueueQuickToggle").checked = enabled;
+    announceUi();
     saveUiState();
     renderPlannedJobs();
   }
   document.getElementById("compactQueueCards").addEventListener("change", (event) => setCompactQueueCards(event.target.checked));
-  document.getElementById("compactQueueQuickToggle").addEventListener("change", (event) => setCompactQueueCards(event.target.checked));
   document.getElementById("sectionStartup").addEventListener("change", (event) => {
     uiState.sectionStartup = event.target.value;
     applySectionStartupPreference();
@@ -3011,7 +2968,6 @@
     uiState.confirmJobActions = event.target.checked;
     saveUiState();
   });
-  document.getElementById("themeButton").addEventListener("click", cycleTheme);
   document.getElementById("previousDayButton").addEventListener("click", () => moveBoardDate(-1));
   document.getElementById("nextDayButton").addEventListener("click", () => moveBoardDate(1));
   todayButton.addEventListener("click", () => selectBoardDate(todayKey));

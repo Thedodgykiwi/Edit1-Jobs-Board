@@ -147,9 +147,30 @@ await check('Editors & suites arrow collapses and reopens the suites', async () 
 await check('profile menu: theme switch and Board settings', async () => {
   await p.click('#profileButton'); await p.click('[data-theme-choice=Dark]');
   ok(await p.evaluate(() => document.documentElement.dataset.theme) === 'dark', 'theme not dark');
+  ok(await p.getAttribute('[data-theme-choice=Dark]', 'aria-checked') === 'true', 'Dark not shown as chosen');
+  ok(await p.isVisible('#profileMenu'), 'menu closed after choosing a theme');
   await p.click('[data-theme-choice=Light]'); await p.click('#profileSettings');
   ok(await p.evaluate(() => document.getElementById('settingsDialog').open), 'Board settings did not open');
   await p.keyboard.press('Escape');
+});
+await check('editor-list icon and Job Queue icon work, and stay in step with keys and settings', async () => {
+  await p.click('#editorsIconButton'); ok(await p.isVisible('#editorsPanel .editor-radar'), 'editor list did not open');
+  ok(await p.getAttribute('#editorsIconButton', 'aria-expanded') === 'true', 'editor icon state wrong');
+  await p.click('#editorsIconButton'); ok(await p.getAttribute('#editorsIconButton', 'aria-expanded') === 'false', 'editor list did not close');
+  await p.click('#queueIconButton'); ok(await p.isHidden('#poolSection'), 'Job Queue not hidden');
+  ok(await p.getAttribute('#queueIconButton', 'aria-pressed') === 'false', 'queue icon state wrong');
+  await p.click('body', { position: { x: 5, y: 5 } }); await p.keyboard.press('e');
+  ok(await p.isVisible('#poolSection'), 'E key did not show the Job Queue');
+  ok(await p.getAttribute('#queueIconButton', 'aria-pressed') === 'true', 'queue icon not in step with E key');
+  const before = await p.getAttribute('#poolTitleToggle', 'aria-expanded');
+  await p.keyboard.press('j');
+  ok(await p.getAttribute('#poolTitleToggle', 'aria-expanded') !== before, 'Job Queue arrow not in step with J key');
+  await p.keyboard.press('j');
+  await p.click('#profileButton'); await p.click('#profileSettings');
+  await p.click('label:has(#compactQueueCards)'); await p.keyboard.press('Escape');
+  ok(await p.getAttribute('[data-queue-view=list]', 'aria-checked') === 'true', 'Cards/List switch not in step with Board settings');
+  await p.click('[data-queue-view=cards]');
+  ok(!(await p.isChecked('#compactQueueCards')), 'Board settings not in step with Cards/List switch');
 });
 await check('changes are still there after a reload', async () => {
   await p.reload(); await upToDate();

@@ -36,8 +36,6 @@
 .gate-card p { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
 .gate-mark { pointer-events: none; }
 
-/* Theme and Settings buttons live in the profile menu now (board.js still drives them) */
-.moved-to-menu { display: none !important; }
 
 /* Profile menu (shell.js): Google photo, opens theme / Settings / Sign out */
 .profile { position: relative; flex: none; }

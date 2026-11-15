@@ -25,59 +25,48 @@
     if (on) { syncTheme(); panel.querySelector('[aria-checked="true"]')?.focus(); }
   };
   btn.addEventListener('click', () => open(panel.hidden));
-  // Only real clicks outside close it (the theme choice clicks the hidden theme button itself).
+  // Only real clicks outside close it (a programmatic click elsewhere must not; playbook design.md).
   document.addEventListener('click', (e) => { if (e.isTrusted && !panel.hidden && !e.target.closest('.profile')) open(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { open(false); btn.focus(); } });
 
-  // Theme: the board keeps its own theme setting (board.js, behind the hidden
-  // #themeButton, which cycles Auto → Light → Dark). Step it to the choice.
-  const currentTheme = () => $('themeMode').textContent.trim();
+  // The board (board.js) offers direct commands as window.Edit1Board and announces
+  // its display settings with a "board:ui" event (issue #22). board.js loads after
+  // this file, so look the commands up when a control is used.
+  const board = () => window.Edit1Board;
+  let ui = {};
+
+  // Theme (profile menu)
   function syncTheme() {
-    panel.querySelectorAll('[data-theme-choice]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.themeChoice === currentTheme())));
+    panel.querySelectorAll('[data-theme-choice]').forEach((b) =>
+      b.setAttribute('aria-checked', String(b.dataset.themeChoice.toLowerCase() === ui.theme)));
   }
-  panel.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => {
-    for (let i = 0; i < 3 && currentTheme() !== b.dataset.themeChoice; i++) $('themeButton').click();
-    syncTheme();
-  }));
-  $('profileSettings').addEventListener('click', () => { open(false); $('settingsButton').click(); });
+  panel.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => board()?.setTheme(b.dataset.themeChoice.toLowerCase())));
+  $('profileSettings').addEventListener('click', () => { open(false); board()?.openSettings(); });
   $('sign-out').addEventListener('click', () => open(false));
 
   // ---- Job Queue header (issue #3): tap the title to open/close; Cards / List switch ----
-  // The board's own controls (#poolCollapseButton, #compactQueueQuickToggle) are hidden
-  // but still do the work, so the board's logic is unchanged.
-  const pool = $('poolSection');
   const titleToggle = $('poolTitleToggle');
-  titleToggle.addEventListener('click', () => $('poolCollapseButton').click());
-  const quick = $('compactQueueQuickToggle');
-  const syncQueueHeader = () => {
-    titleToggle.setAttribute('aria-expanded', String(!pool.classList.contains('collapsed')));
-    pool.querySelectorAll('[data-queue-view]').forEach((b) =>
-      b.setAttribute('aria-checked', String((b.dataset.queueView === 'list') === quick.checked)));
-  };
-  pool.querySelectorAll('[data-queue-view]').forEach((b) => b.addEventListener('click', () => {
-    const list = b.dataset.queueView === 'list';
-    if (quick.checked !== list) { quick.checked = list; quick.dispatchEvent(new Event('change')); }
-    syncQueueHeader();
-  }));
-  new MutationObserver(syncQueueHeader).observe(pool, { attributes: true, attributeFilter: ['class'] });
-  new MutationObserver(syncQueueHeader).observe($('plannedJobs'), { attributes: true, attributeFilter: ['class'] });
-  syncQueueHeader();
+  titleToggle.addEventListener('click', () => board()?.togglePool());
+  const pool = $('poolSection');
+  pool.querySelectorAll('[data-queue-view]').forEach((b) => b.addEventListener('click', () => board()?.setCompactQueueCards(b.dataset.queueView === 'list')));
 
   // ---- Editors & suites header (issue #4): editor list + Job Queue as two icon buttons ----
-  const edBtn = $('editorsIconButton'), qBtn = $('queueIconButton'), edPanel = $('editorsPanel');
-  edBtn.addEventListener('click', () => $('editorsCollapseButton').click());
-  qBtn.addEventListener('click', () => $('queueVisibilityButton').click());
-  const syncOpsHeader = () => {
-    const edOpen = !edPanel.classList.contains('collapsed-content');
-    edBtn.setAttribute('aria-expanded', String(edOpen));
-    edBtn.title = `${edOpen ? 'Hide' : 'Show'} editor list`; edBtn.setAttribute('aria-label', edBtn.title);
-    const qShown = !pool.hidden;
-    qBtn.setAttribute('aria-pressed', String(qShown));
-    qBtn.title = `${qShown ? 'Hide' : 'Show'} Job Queue (E)`;
-  };
-  new MutationObserver(syncOpsHeader).observe(edPanel, { attributes: true, attributeFilter: ['class'] });
-  new MutationObserver(syncOpsHeader).observe(pool, { attributes: true, attributeFilter: ['hidden'] });
-  syncOpsHeader();
+  const edBtn = $('editorsIconButton'), qBtn = $('queueIconButton');
+  edBtn.addEventListener('click', () => board()?.toggleEditors());
+  qBtn.addEventListener('click', () => board()?.toggleQueueShown());
+
+  // Keep every control in step with the board's settings (also when changed in Board settings or by a shortcut key).
+  document.addEventListener('board:ui', (e) => {
+    ui = e.detail;
+    syncTheme();
+    titleToggle.setAttribute('aria-expanded', String(!ui.poolCollapsed));
+    pool.querySelectorAll('[data-queue-view]').forEach((b) =>
+      b.setAttribute('aria-checked', String((b.dataset.queueView === 'list') === ui.compactQueueCards)));
+    edBtn.setAttribute('aria-expanded', String(!ui.editorsCollapsed));
+    edBtn.title = `${ui.editorsCollapsed ? 'Show' : 'Hide'} editor list`; edBtn.setAttribute('aria-label', edBtn.title);
+    qBtn.setAttribute('aria-pressed', String(!ui.poolHidden));
+    qBtn.title = `${ui.poolHidden ? 'Show' : 'Hide'} Job Queue (E)`;
+  });
 
   $('ios-install').addEventListener('click', (e) => { if (e.target === $('ios-install') || e.target.closest('[data-close]')) $('ios-install').close(); });
 
