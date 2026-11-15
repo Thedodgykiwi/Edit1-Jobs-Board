@@ -8,12 +8,7 @@
     <meta name="theme-color" content="#080a0d" />
     <meta name="description" content="A day-focused editing shift board for Edit 1, suites 2–9 and the Millbank edit suites." />
     <title>Edit 1 Job Board</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="board.css" />
-    <link rel="stylesheet" href="playbook-look.css" />
-    <link rel="stylesheet" href="shell.css" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/app/local/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="icons/app/local/favicon-32.png" sizes="32x32" type="image/png" />
@@ -76,13 +71,6 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             New job
           </button>
-          <button class="theme-button moved-to-menu" id="themeButton" type="button" aria-label="Theme: Auto" title="Theme: Auto">
-            <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H4zM8 21h8M12 17v4" /></svg>
-            <span id="themeMode">Auto</span>
-          </button>
-          <button class="icon-button moved-to-menu" id="settingsButton" type="button" aria-label="Board settings" title="Board settings">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.6v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.2 15a1.7 1.7 0 0 0-1.3-1H3v-4h-.1a1.7 1.7 0 0 0 1.3-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.66 4.2l.06.06A1.7 1.7 0 0 0 8.6 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19 9a1.7 1.7 0 0 0 1.1 1H21v4h-.9a1.7 1.7 0 0 0-.7 1Z" /></svg>
-          </button>
           <!-- Profile menu (shell.js): your Google photo; theme, Settings and Sign out live inside -->
           <div class="profile">
             <button type="button" id="profileButton" class="profile-btn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" aria-label="Your account and settings" title="Your account and settings">
@@ -136,13 +124,8 @@
             <div>
               <p class="eyebrow">Incoming / planned</p>
               <div class="queue-title-line">
-                <!-- Issue #3: the title opens/closes the queue (shell.js clicks the hidden #poolCollapseButton) -->
+                <!-- Issue #3: the title opens/closes the queue (shell.js → Edit1Board.togglePool) -->
                 <h2 id="poolTitle"><button type="button" id="poolTitleToggle" class="queue-title-toggle" aria-controls="jobPoolContent" aria-expanded="false" title="Show or hide jobs (J)">Job Queue <span class="count-badge" id="poolCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
-                <label class="queue-compact-toggle moved-to-menu" title="Use compact Job Queue cards">
-                  <input id="compactQueueQuickToggle" type="checkbox" />
-                  <span class="compact-switch" aria-hidden="true"></span>
-                  <span class="queue-compact-label">Compact cards</span>
-                </label>
               </div>
             </div>
             <div class="section-heading-actions section-heading-actions-right">
@@ -150,10 +133,6 @@
                 <button type="button" role="radio" data-queue-view="cards" aria-label="Cards" title="Cards"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5" /><rect x="4" y="13" width="16" height="7" rx="1.5" /></svg></button>
                 <button type="button" role="radio" data-queue-view="list" aria-label="List (compact cards)" title="List (compact cards)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" /></svg></button>
               </div>
-              <button class="collapse-button moved-to-menu" id="poolCollapseButton" type="button" aria-expanded="false" aria-controls="jobPoolContent" aria-keyshortcuts="J">
-                <span>Show jobs</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-              </button>
             </div>
           </div>
           <div class="collapsible-content" id="jobPoolContent">
@@ -163,19 +142,18 @@
 
         <section class="operations" aria-labelledby="operationsTitle">
           <div class="section-heading">
+            <!-- Issue #17: title (tap = filter) + arrow that collapses the suites, like the Job Queue -->
+            <div class="suites-title-row">
             <button class="suite-filter-heading filter-all" id="suiteFilterButton" type="button" aria-label="Showing all suites. Tap to show free suites" aria-keyshortcuts="F">
               <span class="eyebrow" id="suiteFilterEyebrow">Tap title to filter · All</span>
               <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors &amp; suites</span>
             </button>
+            <button type="button" id="suitesCollapseToggle" class="suites-collapse-toggle" aria-controls="suiteGrid" aria-expanded="true" aria-label="Hide suites" title="Hide suites"><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button>
+            </div>
             <div class="editor-view-actions">
-              <!-- Issue #4: two small icon buttons; they click the board's own (hidden) buttons below -->
+              <!-- Issue #4: two small icon buttons (shell.js → Edit1Board.toggleEditors / toggleQueueShown) -->
               <button type="button" class="section-icon-btn" id="editorsIconButton" aria-controls="editorsPanel" aria-expanded="false" aria-label="Show editor list" title="Show editor list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1" /><circle cx="9" cy="8" r="3.5" /><path d="M22 19v-1a4 4 0 0 0-3-3.87M16 4.13a3.5 3.5 0 0 1 0 6.75" /></svg></button>
               <button type="button" class="section-icon-btn" id="queueIconButton" aria-controls="poolSection" aria-pressed="true" aria-label="Show Job Queue" aria-keyshortcuts="E" title="Hide Job Queue (E)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4M4 13V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v7M4 13v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg></button>
-              <button class="collapse-button moved-to-menu" id="queueVisibilityButton" type="button" aria-controls="poolSection" aria-expanded="true" aria-keyshortcuts="E" title="Hide Job Queue card (E)">Hide queue</button>
-            <button class="collapse-button moved-to-menu" id="editorsCollapseButton" type="button" aria-expanded="false" aria-controls="editorsPanel">
-              <span>Show editors</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
             </div>
           </div>
 
@@ -628,7 +606,7 @@
             <p class="eyebrow">Board display</p>
             <h2 id="settingsDialogTitle">Settings</h2>
           </div>
-          <div class="dialog-heading-actions"><button class="release-notes-link moved-to-menu" id="releaseNotesButton" type="button">v1.46.5 · Release notes</button><button class="icon-button" data-close-dialog="settingsDialog" type="button" aria-label="Close">
+          <div class="dialog-heading-actions"><button class="icon-button" data-close-dialog="settingsDialog" type="button" aria-label="Close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button></div>
         </div>
@@ -790,17 +768,17 @@
       <div class="dialog-panel">
         <div class="dialog-heading">
           <div>
-            <p class="eyebrow">Confirm removal</p>
-            <h2 id="biffDialogTitle">Has this job been Biffed?</h2>
+            <p class="eyebrow">Biff job</p>
+            <h2 id="biffDialogTitle">Biff this job?</h2>
           </div>
           <button class="icon-button" data-close-dialog="biffDialog" type="button" aria-label="Close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </div>
-        <p class="confirm-copy"><strong id="biffJobName"></strong> will move out of the live workflow and into Biffed.</p>
+        <p class="confirm-copy"><strong id="biffJobName"></strong> moves out of the running order into Biffed. You can undo it for a few seconds afterwards.</p>
         <div class="dialog-actions">
-          <button class="button button-ghost" data-close-dialog="biffDialog" type="button">No</button>
-          <button class="button button-biff-confirm" id="biffConfirmButton" type="button">Yes</button>
+          <button class="button button-ghost" id="biffKeepButton" data-close-dialog="biffDialog" type="button">Keep job</button>
+          <button class="button button-biff-confirm" id="biffConfirmButton" type="button">Biff job</button>
         </div>
       </div>
     </dialog>

@@ -141,16 +141,6 @@
     document.getElementById("syncReload").hidden = !conflict;
   }
 
-  function clearLegacyBoards() {
-    try {
-      Object.keys(localStorage)
-        .filter((key) => /^edit1-shift-board:\d{4}-\d{2}-\d{2}$/.test(key))
-        .forEach((key) => localStorage.removeItem(key));
-    } catch (error) {
-      console.warn("Could not clear legacy browser boards; will retry on next opening.", error);
-    }
-  }
-
   // Storage lives in cloud.js (Cloud Firestore); same results the old server API gave.
   function cloudRequest(date, payload, options = {}) {
     return window.Edit1Cloud.board(date, payload, options);
@@ -466,6 +456,7 @@
     try {
       const result = await cloudRequest(date);
       selectedDateKey = date;
+      remoteBoardChanges++;
       state = result.board || freshDayState(date);
       cloudRevision = result.revision;
       savedSnapshot = JSON.stringify(state);
@@ -936,7 +927,8 @@
 
   function queuedJobsForSuite(suite) {
     return state.jobs.filter((job) => job.status === "queued" && job.suite === suite)
-      .sort((a, b) => (a.queuedAt || "").localeCompare(b.queuedAt || ""));
+      // Paused jobs (issue #10) first, then in the order they were queued.
+      .sort((a, b) => Number(Boolean(b.pausedInSuite)) - Number(Boolean(a.pausedInSuite)) || (a.queuedAt || "").localeCompare(b.queuedAt || ""));
   }
 
   function plannedJobsForEditor(editorId) {
@@ -1104,8 +1096,6 @@
 
   function renderCollapseState() {
     const poolSection = document.getElementById("poolSection");
-    const poolButton = document.getElementById("poolCollapseButton");
-    const editorsButton = document.getElementById("editorsCollapseButton");
     const completedSection = document.getElementById("completedSection");
     const completedButton = document.getElementById("completedCollapseButton");
     const biffedSection = document.getElementById("biffedSection");
@@ -1119,17 +1109,9 @@
 
     poolSection.hidden = uiState.poolHidden;
     document.getElementById("showJobQueueCard").checked = !uiState.poolHidden;
-    const queueVisibilityButton = document.getElementById("queueVisibilityButton");
-    queueVisibilityButton.textContent = uiState.poolHidden ? "Show queue" : "Hide queue";
-    queueVisibilityButton.setAttribute("aria-expanded", String(!uiState.poolHidden));
-    queueVisibilityButton.title = `${uiState.poolHidden ? "Show" : "Hide"} Job Queue card (E)`;
     poolSection.classList.toggle("collapsed", uiState.poolCollapsed);
-    poolButton.setAttribute("aria-expanded", String(!uiState.poolCollapsed));
-    poolButton.querySelector("span").textContent = uiState.poolCollapsed ? `Show ${poolTotal} ${poolTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
 
     editorsPanel.classList.toggle("collapsed-content", uiState.editorsCollapsed);
-    editorsButton.setAttribute("aria-expanded", String(!uiState.editorsCollapsed));
-    editorsButton.querySelector("span").textContent = uiState.editorsCollapsed ? `Show ${editors().length} editors` : "Hide editors";
 
     completedSection.classList.toggle("collapsed", uiState.completedCollapsed);
     completedButton.setAttribute("aria-expanded", String(!uiState.completedCollapsed));
@@ -1138,13 +1120,13 @@
     biffedSection.classList.toggle("collapsed", uiState.biffedCollapsed);
     biffedButton.setAttribute("aria-expanded", String(!uiState.biffedCollapsed));
     biffedButton.querySelector("span").textContent = uiState.biffedCollapsed ? `Show ${biffedTotal} ${biffedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    announceUi();
   }
 
   function renderSettingsState() {
     document.getElementById("emptySuitePresentation").value = uiState.emptySuitePresentation;
     document.getElementById("compactSuites").checked = uiState.compactSuites;
     document.getElementById("compactQueueCards").checked = uiState.compactQueueCards;
-    document.getElementById("compactQueueQuickToggle").checked = uiState.compactQueueCards;
     document.getElementById("sectionStartup").value = uiState.sectionStartup;
     document.getElementById("queueSort").value = uiState.queueSort;
     document.getElementById("dueWarningMinutes").value = String(uiState.dueWarningMinutes);
@@ -1167,8 +1149,37 @@
     setQueueVisibility(uiState.poolHidden);
   }
 
-  document.getElementById("queueVisibilityButton").addEventListener("click", toggleQueueVisibility);
   document.getElementById("showJobQueueCard").addEventListener("change", (event) => setQueueVisibility(event.target.checked));
+
+  // ---- Board commands for the page shell (issue #22) ----------------------
+  // shell.js (profile menu, Job Queue / Editors & suites headers) calls these
+  // directly, and listens for "board:ui" to keep its controls in step.
+  function uiSnapshot() {
+    return {
+      theme: uiState.theme,
+      poolCollapsed: uiState.poolCollapsed,
+      poolHidden: uiState.poolHidden,
+      editorsCollapsed: uiState.editorsCollapsed,
+      compactQueueCards: uiState.compactQueueCards,
+    };
+  }
+  function announceUi() {
+    document.dispatchEvent(new CustomEvent("board:ui", { detail: uiSnapshot() }));
+  }
+  window.Edit1Board = {
+    ui: uiSnapshot,
+    setTheme(mode) {
+      if (!["auto", "light", "dark"].includes(mode)) return;
+      uiState.theme = mode;
+      saveUiState();
+      applyTheme();
+    },
+    openSettings: () => settingsDialog.showModal(),
+    togglePool: () => toggleSection("pool"),
+    toggleEditors: () => toggleSection("editors"),
+    toggleQueueShown: () => toggleQueueVisibility(),
+    setCompactQueueCards: (on) => setCompactQueueCards(Boolean(on)),
+  };
 
   function toggleSection(section) {
     if (section === "pool") uiState.poolCollapsed = !uiState.poolCollapsed;
@@ -1183,24 +1194,7 @@
     const prefersDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
     const resolved = uiState.theme === "auto" ? (prefersDark ? "dark" : "light") : uiState.theme;
     document.documentElement.dataset.theme = resolved;
-    const mode = uiState.theme[0].toUpperCase() + uiState.theme.slice(1);
-    const button = document.getElementById("themeButton");
-    const icon = document.getElementById("themeIcon");
-    document.getElementById("themeMode").textContent = mode;
-    button.setAttribute("aria-label", `Theme: ${mode}. Change theme`);
-    button.title = `Theme: ${mode}`;
-    icon.innerHTML = uiState.theme === "light"
-      ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>'
-      : uiState.theme === "dark"
-        ? '<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/>'
-        : '<path d="M4 5h16v12H4zM8 21h8M12 17v4"/>';
-  }
-
-  function cycleTheme() {
-    const modes = ["auto", "light", "dark"];
-    uiState.theme = modes[(modes.indexOf(uiState.theme) + 1) % modes.length];
-    saveUiState();
-    applyTheme();
+    announceUi();
   }
 
   function renderSummary() {
@@ -1350,7 +1344,7 @@
         `;
       }
       const canFastTrack = editor && !editor.onBreak && (allowsConcurrentRunning(editor.id, suite) || !activeJobs.length);
-      const fastTrackMarkup = editor ? `<button class="suite-break-icon suite-fast-track-icon" data-fast-track-suite="${suite}" type="button" ${canFastTrack ? "" : "disabled"} aria-label="Fast Track job for ${escapeHtml(editor.name)} in ${escapeHtml(suiteLabel(suite))}" title="${editor.onBreak ? "Editor is on break" : activeJobs.length && !allowsConcurrentRunning(editor.id, suite) ? "Finish or park the current job first" : "Fast Track job"}">
+      const fastTrackMarkup = editor ? `<button class="suite-break-icon suite-fast-track-icon" data-fast-track-suite="${suite}" type="button" ${canFastTrack ? "" : "disabled"} aria-label="Fast Track job for ${escapeHtml(editor.name)} in ${escapeHtml(suiteLabel(suite))}" title="${editor.onBreak ? "Editor is on break" : activeJobs.length && !allowsConcurrentRunning(editor.id, suite) ? "Finish or pause the current job first" : "Fast Track job"}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>` : "";
       const breakMarkup = editor ? `<button class="suite-break-icon ${editor.onBreak ? "active" : ""}" data-suite-break="${editor.id}" type="button" aria-label="${editor.onBreak ? "Return " + escapeHtml(editor.name) + " from break" : "Put " + escapeHtml(editor.name) + " on break"}" title="${editor.onBreak ? "Return from break" : "Take a break"}">
@@ -1426,7 +1420,7 @@
           </div>
         </div>
         <div class="active-actions">
-          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Park ${escapeHtml(active.title)}" title="Park job">
+          <button class="button button-park" data-park-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Pause ${escapeHtml(active.title)}" title="Pause job (stays in this suite)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" /></svg>
           </button>
           <button class="button button-complete" data-complete-job="${escapeHtml(active.id)}" type="button" ${editor.onBreak ? "disabled" : ""} aria-label="Complete ${escapeHtml(active.title)}" title="Complete job">
@@ -1439,15 +1433,17 @@
       </div>`).join("");
 
     const canRunConcurrently = allowsConcurrentRunning(editor.id);
+    // Paused jobs (top of the list) and the first job that is only waiting can start (issue #11).
+    const firstWaiting = Math.max(0, queued.findIndex((job) => !job.pausedInSuite)) || queued.filter((job) => job.pausedInSuite).length;
 
     const queueMarkup = queued.length ? `
       <div class="coming-up-divider"><span>Coming up next</span></div>
       <div class="suite-queue">${queued.map((job, index) => `
         <div class="queued-job suite-job-card ${isProtectedWork(job.workType) ? "protected-work" : ""} ${dueWarningClass(job)}">
           <div class="queue-position">${index + 1}</div>
-          <div class="queued-job-copy"><button class="job-detail-trigger queued-job-title" data-job-details="${escapeHtml(job.id)}" type="button" title="View details for ${escapeHtml(job.title)}"><strong>${escapeHtml(job.title)}</strong></button><div class="queued-job-meta"><span>${escapeHtml(job.workType)}${job.due ? ` · ${escapeHtml(job.due)}` : ""}</span>${dueWarningBadge(job)}</div></div>
+          <div class="queued-job-copy"><button class="job-detail-trigger queued-job-title" data-job-details="${escapeHtml(job.id)}" type="button" title="View details for ${escapeHtml(job.title)}"><strong>${escapeHtml(job.title)}</strong>${job.pausedInSuite ? ' <span class="paused-label">Paused</span>' : ""}</button><div class="queued-job-meta"><span>${escapeHtml(job.workType)}${job.due ? ` · ${escapeHtml(job.due)}` : ""}</span>${dueWarningBadge(job)}</div></div>
           <div class="queued-job-actions">
-            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > 0)) ? "disabled" : ""} aria-label="Start ${escapeHtml(job.title)}" title="Start job">
+            <button class="queue-start-button" data-start-queued="${escapeHtml(job.id)}" type="button" ${editor.onBreak || (!canRunConcurrently && (activeJobs.length || index > firstWaiting)) ? "disabled" : ""} aria-label="${job.pausedInSuite ? "Resume" : "Start"} ${escapeHtml(job.title)}" title="${job.pausedInSuite ? "Resume job" : "Start job"}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z" /></svg>
             </button>
             <button class="queue-return-button" data-unqueue-job="${escapeHtml(job.id)}" type="button" aria-label="Return ${escapeHtml(job.title)} to the Job Queue" title="Return to Job Queue">
@@ -1467,7 +1463,6 @@
     poolCount.textContent = String(jobs.length);
     plannedJobs.classList.toggle("is-empty", !jobs.length);
     plannedJobs.classList.toggle("compact-job-cards", uiState.compactQueueCards);
-    document.getElementById("compactQueueQuickToggle").checked = uiState.compactQueueCards;
 
     if (!jobs.length) {
       plannedJobs.innerHTML = `
@@ -1505,14 +1500,15 @@
             <span>${escapeHtml(job.contact || "No reporter or producer assigned")}</span>
           </div>` : ""}
           ${!uiState.compactQueueCards && uiState.queueMetadata.editFormat && job.type ? `<div class="job-meta"><span>${escapeHtml(job.type)}</span></div>` : ""}
-          ${!uiState.compactQueueCards && job.status === "parked" ? `<div class="parked-origin">From ${escapeHtml(job.parkedFromEditorName || "previous editor")} · ${escapeHtml(job.parkedFromSuite ? suiteLabel(job.parkedFromSuite) : "No suite")} · ${escapeHtml(job.parkedAt || "")}</div>` : ""}
+          ${""/* Issue #14: no "From editor · suite · time" line on parked cards; the Parked tag and the editor drop-down say it, and the history keeps the detail. */}
           ${uiState.compactQueueCards ? "" : `<div class="job-actions">
             <select class="assignee-select" data-job-assignee="${escapeHtml(job.id)}" aria-label="Editor pre-assigned to ${escapeHtml(job.title)}">
               ${editorOptions(job.editorId)}
             </select>
-            <button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" ${readiness.ready ? "" : "disabled"}>Send to Editor</button>
+            ${readiness.ready ? `<button class="button button-primary push-button" data-push-job="${escapeHtml(job.id)}" type="button" title="${escapeHtml(readiness.message)}">Send to ${escapeHtml(editorById(job.editorId).name.split(" ")[0])}</button>` : ""}
           </div>`}
-          <div class="readiness ${readiness.ready ? "ready" : "waiting"}">${escapeHtml(readiness.message)}</div>
+          ${""/* Issue #15: no status line on Job Queue cards; only explain when the picked editor can't take the job (no Send button then). */}
+          ${job.editorId && !readiness.ready ? `<div class="readiness waiting">${escapeHtml(readiness.message)}</div>` : ""}
         </article>
       `;
     }).join("");
@@ -1770,6 +1766,7 @@
       break_started: { title: "Break started", detail: `${editor} paused editing`, tone: "paused" },
       break_ended: { title: "Returned from break", detail: `${editor} · ${suite}`, tone: "started" },
       parked: { title: "Job parked", detail: `${editor} · ${suite}`, tone: "parked" },
+      paused_in_suite: { title: "Job paused", detail: `Kept in ${suite} under Coming up next`, tone: "parked" },
       returned: { title: "Returned to the Job Queue", detail: event.editorId ? `From ${editor} · ${suite}` : "Unassigned", tone: "returned" },
       moved: { title: `Moved with ${editor}`, detail: suite, tone: "assigned" },
       completed: { title: "Job completed", detail: `${editor} · ${suite}`, tone: "completed" },
@@ -2284,12 +2281,13 @@
     if (!job) return;
     const editor = editorById(job.editorId);
     if (!editor || editor.onBreak || (!allowsConcurrentRunning(job.editorId, job.suite) && activeJobForEditor(job.editorId))) {
-      showToast(editor?.onBreak ? `${editor.name} is still on break` : "Finish or park the current job first", "danger");
+      showToast(editor?.onBreak ? `${editor.name} is still on break` : "Finish or pause the current job first", "danger");
       return;
     }
     job.status = "active";
     job.startedAt = currentTime();
     delete job.queuedAt;
+    delete job.pausedInSuite;
     const hasStartedBefore = job.history?.some((event) => event.type === "started" || event.type === "resumed");
     recordJobEvent(job, hasStartedBefore ? "resumed" : "started", { editorId: job.editorId, suite: job.suite });
     showToast(`${job.title} started in ${suiteLabel(job.suite)}`, "complete");
@@ -2307,12 +2305,15 @@
       confirmLabel: "Return",
       confirmClass: "button-park"
     }))) return;
+    const before = JSON.stringify(state);
     job.status = job.wasParked ? "parked" : "planned";
     recordJobEvent(job, "returned", { editorId: job.editorId, suite: job.suite });
     delete job.suite;
     delete job.queuedAt;
+    delete job.pausedInSuite;
     showToast(`${job.title} returned to the Job Queue`, "biff");
     render();
+    offerUndo(before);
   }
 
   function moveQueuedJobs(editorId, suite) {
@@ -2325,6 +2326,7 @@
         job.status = job.wasParked ? "parked" : "planned";
         delete job.suite;
         delete job.queuedAt;
+        delete job.pausedInSuite;
       }
     });
   }
@@ -2337,31 +2339,35 @@
       showToast("Bring the editor back from break before parking this job", "danger");
       return;
     }
+    // Issues #10 / #11: pausing keeps the job on its suite card, at the top of
+    // "Coming up next"; ▶ resumes it (one running job per suite, except Edit 1)
+    // and ↩ parks it in the Job Queue.
+    return pauseInSuite(job, editor);
+  }
+
+  async function pauseInSuite(job, editor) {
     if (!(await confirmJobAction({
       eyebrow: "Confirm pause",
-      title: "Park this job?",
+      title: "Pause this job?",
       jobName: job.title,
-      message: " will pause and return to the Job Queue.",
-      confirmLabel: "Park",
+      message: ` will pause and stay in ${suiteLabel(job.suite)} under Coming up next.`,
+      confirmLabel: "Pause",
       confirmClass: "button-park"
     }))) return;
-    const origin = {
-      editorId: job.editorId,
-      editorName: editor?.name || "Previous editor",
-      suite: job.suite,
-      parkedAt: currentTime()
-    };
-    job.parkHistory = [...(job.parkHistory || []), origin];
-    job.status = "parked";
-    job.parkedAt = origin.parkedAt;
-    job.parkedFromEditorId = origin.editorId;
-    job.parkedFromEditorName = origin.editorName;
-    job.parkedFromSuite = origin.suite;
-    recordJobEvent(job, "parked", { editorId: origin.editorId, suite: origin.suite });
-    delete job.suite;
-    const remainingActive = activeJobsForEditor(origin.editorId).length;
-    showToast(`${job.title} returned to the Job Queue · ${remainingActive ? `${origin.editorName} remains busy with ${remainingActive} live job${remainingActive === 1 ? "" : "s"}` : `${origin.editorName} and ${suiteLabel(origin.suite)} are free`}`, "park");
+    const before = JSON.stringify(state);
+    job.status = "queued";
+    job.pausedInSuite = true;
+    job.queuedAt = new Date().toISOString();   // paused jobs sort first (queuedJobsForSuite)
+    // If it is later returned to the Job Queue, it shows as parked from here.
+    job.wasParked = true;
+    job.parkedAt = currentTime();
+    job.parkedFromEditorId = job.editorId;
+    job.parkedFromEditorName = editor?.name || "Previous editor";
+    job.parkedFromSuite = job.suite;
+    recordJobEvent(job, "paused_in_suite", { editorId: job.editorId, suite: job.suite });
+    showToast(`${job.title} paused · still in ${suiteLabel(job.suite)} under Coming up next`, "park");
     render();
+    offerUndo(before);
   }
 
   async function completeJob(jobId) {
@@ -2380,6 +2386,7 @@
       confirmLabel: "Complete",
       confirmClass: "button-complete"
     }))) return;
+    const before = JSON.stringify(state);
     job.status = "completed";
     job.completedBy = editor ? editor.name : "Unassigned editor";
     job.completedSuite = job.suite;
@@ -2389,6 +2396,7 @@
     const remainingActive = activeJobsForEditor(job.editorId).length;
     showToast(`${job.title} signed off${remainingActive ? ` · ${job.completedBy} remains busy with ${remainingActive} live job${remainingActive === 1 ? "" : "s"}` : waiting ? ` · ${waiting} queued job${waiting === 1 ? " is" : "s are"} ready next` : ` · ${job.completedBy} is now free`}`, "complete");
     render();
+    offerUndo(before);
   }
 
   function confirmJobAction({ eyebrow, title, jobName, message, confirmLabel, confirmClass, force = false }) {
@@ -2414,8 +2422,12 @@
     const job = state.jobs.find((item) => item.id === jobId && ["planned", "parked", "queued", "active"].includes(item.status));
     if (!job) return;
     biffingJobId = job.id;
+    // Issue #13: like Complete / Pause / Return, Biff only asks when "Confirm job
+    // actions" is on; otherwise it happens straight away and the Undo bar follows.
+    if (!uiState.confirmJobActions) return confirmBiffJob();
     document.getElementById("biffJobName").textContent = job.title;
     biffDialog.showModal();
+    document.getElementById("biffKeepButton").focus();   // the safe choice, not the close button
   }
 
   function confirmBiffJob() {
@@ -2426,6 +2438,7 @@
       return;
     }
     const editor = editorById(job.editorId);
+    const before = JSON.stringify(state);
     job.biffedFrom = job.status;
     job.biffedEditor = editor?.name || "Unassigned";
     job.biffedSuite = job.suite || null;
@@ -2434,10 +2447,12 @@
     job.status = "biffed";
     delete job.suite;
     delete job.queuedAt;
+    delete job.pausedInSuite;
     biffDialog.close();
     biffingJobId = null;
     showToast(`${job.title} biffed`, "biff");
     render();
+    offerUndo(before);
   }
 
   function toggleBreak(editorId) {
@@ -2619,6 +2634,7 @@
       job.editorId = null;
       delete job.suite;
       delete job.queuedAt;
+      delete job.pausedInSuite;
     });
     editor.onBreak = false;
     editor.removedFromRoster = true;
@@ -2699,6 +2715,44 @@
     return `<div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h9M5 17h6" /></svg><strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span></div>`;
   }
 
+  // ---- Undo (issue #12): after Complete, Pause, Biff or Return, a bar with Undo for 8 s.
+  // Undo restores the whole day's board as it was just before the action, unless
+  // someone else's change has arrived since (then it is cancelled, never overwritten).
+  let remoteBoardChanges = 0;   // bumped whenever the board is replaced from the cloud
+  let undoEntry = null;
+  let undoTimer = null;
+  const undoBar = document.createElement("div");
+  undoBar.className = "undo-bar";
+  undoBar.setAttribute("role", "status");
+  undoBar.hidden = true;
+  undoBar.innerHTML = '<div class="undo-row"><span class="undo-message"></span><button type="button" class="undo-button">Undo</button></div><div class="undo-countdown"></div>';
+  document.body.append(undoBar);
+  function hideUndo() { clearTimeout(undoTimer); undoEntry = null; undoBar.hidden = true; }
+  function offerUndo(before) {
+    const message = toast.textContent;
+    clearTimeout(toastTimer); toast.classList.remove("visible");   // the bar carries the message
+    undoEntry = { before, date: selectedDateKey, remote: remoteBoardChanges };
+    undoBar.querySelector(".undo-message").textContent = message;
+    const line = undoBar.querySelector(".undo-countdown");
+    line.style.animation = "none"; void line.offsetWidth; line.style.animation = "";   // restart the countdown
+    undoBar.hidden = false;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(hideUndo, 8000);
+  }
+  undoBar.querySelector(".undo-button").addEventListener("click", async () => {
+    const entry = undoEntry;
+    hideUndo();
+    if (!entry) return;
+    for (let i = 0; i < 50 && cloudBusy; i++) await new Promise((r) => setTimeout(r, 100));   // let a save in progress finish
+    if (entry.date !== selectedDateKey || entry.remote !== remoteBoardChanges || cloudBusy) {
+      showToast("Someone else changed the board just now, so this can't be undone", "danger");
+      return;
+    }
+    state = JSON.parse(entry.before);
+    render();
+    showToast("Undone", "info");
+  });
+
   function showToast(message, tone = "info") {
     clearTimeout(toastTimer);
     toast.textContent = message;
@@ -2750,7 +2804,7 @@
       return;
     }
     if (activeJobs.length && !allowsConcurrentRunning(editor.id, suite)) {
-      showToast("Finish or park the current job first", "danger");
+      showToast("Finish or pause the current job first", "danger");
       return;
     }
     fastTrackTarget = { suite, editorId: editor.id };
@@ -2770,7 +2824,7 @@
     const activeJobs = activeJobsForSuite(target.suite);
     if (editor.onBreak || (activeJobs.length && !allowsConcurrentRunning(editor.id, target.suite))) {
       fastTrackDialog.close();
-      showToast(editor.onBreak ? `${editor.name} is on break` : "Finish or park the current job first", "danger");
+      showToast(editor.onBreak ? `${editor.name} is on break` : "Finish or pause the current job first", "danger");
       return;
     }
     const createdAt = new Date().toISOString();
@@ -2844,47 +2898,6 @@
     detailDialog.close();
     openNewJobDialog(true);
   });
-  document.getElementById("settingsButton").addEventListener("click", () => settingsDialog.showModal());
-  document.getElementById("releaseNotesButton").addEventListener("click", () => {
-    settingsDialog.close();
-    document.getElementById("detailEyebrow").textContent = "Release history";
-    document.getElementById("detailTitle").textContent = "What’s new · v1.46.5";
-    document.getElementById("detailAddJobButton").hidden = true;
-    detailList.innerHTML = `<div class="editor-history release-history"><details open><summary>v1.35.1 · Mobile header <span>Current release</span></summary><div class="release-items"><div class="detail-row"><div class="detail-copy"><strong>One-row mobile controls</strong><span>The New job button is now a compact plus on mobile, keeping the checklist, theme and settings controls together.</span></div></div></div></details><details><summary>Previous releases <span>Open archive</span></summary><div class="release-items"><details><summary>v1.35 · Supervisor checklist</summary><div class="release-copy">Added rapid supervisor tasks, optional notes, cross-off and restore controls, keyboard access, and unfinished reminders that carry across dates and devices.</div></details><details><summary>v1.34 · Shift handover</summary><div class="release-copy">Added a one-page night-shift handover PDF with editors, running work, coming-up jobs and bullet notes.</div></details><details><summary>v1.33 · Fast-moving edit floor</summary><div class="release-copy">Added Fast Track jobs, Edit 1 concurrent work, time-based Day Pulse charts and editor drill-downs, break events in job history, and the Assigned suites filter.</div></details><details><summary>v1.32 · Supervisor workflow</summary><div class="release-copy">Added Edit 1 admin work, optional due times, improved job action layout and individual job history.</div></details><details><summary>v1.31 · Live floor control</summary><div class="release-copy">Introduced compact suite cards, queued and parked work, break handling, suite availability states, and clearer free/busy views.</div></details><details><summary>v1.30 · Planning and visibility</summary><div class="release-copy">Added the Day Sheet, rich paste and editing, queue sorting, priority treatments, editor activity and completed work filters.</div></details><details><summary>v1.20 · The working board</summary><div class="release-copy">Established the Job Queue, editor-to-suite assignment, sending work to edit, status cards, and completed and biffed archives.</div></details><details><summary>v1.00 · Edit 1 Job Board</summary><div class="release-copy">The original same-day newsroom planning board: incoming jobs, Edit 1 control desk, live suites and a record of the day’s output.</div></details></div></details></div>`;
-    const releaseSections = detailList.querySelectorAll(":scope > .release-history > details");
-    releaseSections[0].querySelector("summary").innerHTML = "v1.46.5 · Grabs / Olay / Openers <span>Current release</span>";
-    releaseSections[0].querySelector(".release-items").innerHTML = '<div class="detail-row"><div class="detail-copy"><strong>Updated edit format name</strong><span>Renamed Olay &amp; Openers to Grabs / Olay / Openers in the job format selectors, while keeping existing jobs editable.</span></div></div>';
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.46.4 · Light-mode queue polish</summary><div class="release-copy">Matched the compact-card switch to Light mode and stabilized the Job Queue title row as the queue opens and closes.</div></details><details><summary>v1.46.2 · Bold job titles</summary><div class="release-copy">Fixed suite job-title styling so running and queued titles remain bold beside lighter format and category details.</div></details><details><summary>v1.46.1 · Stronger job titles</summary><div class="release-copy">Strengthened job-title styling across queue and suite cards.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.46 · Compact Job Queue</summary><div class="release-copy">Added a compact queue-card view that keeps titles, categories, priorities, reporters, urgency and job actions visible while hiding notes, edit formats and editor assignment controls.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.6 · Quick-open shortcuts</summary><div class="release-copy">Press N for New Job, D for the Day Sheet, or H to jump directly into the handover creator.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.5 · Board shortcuts</summary><div class="release-copy">Press J to toggle the Job Queue and B to open the Busy editors &amp; jobs window.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.4 · Suite filter shortcut</summary><div class="release-copy">Press F to cycle the Editors &amp; suites view through All, Free, Busy and Assigned.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.3 · Compact suite assignments</summary><div class="release-copy">Pre-assigned work appears beneath the editor name as Free · job assigned, removing the larger centred divider while preserving the normal Coming up next treatment for sent jobs.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.2 · Free-editor assignments</summary><div class="release-copy">The Free editors window mirrors the board with an amber strip, outline and assigned-job count for editors who have planned work in the main queue.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45.1 · Assigned-work visibility</summary><div class="release-copy">Free editors with jobs pre-assigned in the main queue keep their green Free status while gaining an amber suite outline, strip and assigned-job count.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.45 · Off Rota work</summary><div class="release-copy">Added the Off Rota priority and a muted suite treatment for editors running special-project work outside normal daily news editing.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.44 · Suite job details</summary><div class="release-copy">Tap the title of a running or queued suite job to view its category, format, priority, due time, reporter and full brief note.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.43 · Documentary format</summary><div class="release-copy">Added Documentary as an edit format for new, Fast Track and existing jobs.</div></details>');
-    releaseSections[1].querySelector(".release-items").insertAdjacentHTML("afterbegin", '<details><summary>v1.42.2 · Star priority</summary><div class="release-copy">Kept starred tasks above regular tasks regardless of reminder time, while retaining chronological order inside each group.</div></details><details><summary>v1.42.1 · Reminder ordering</summary><div class="release-copy">Ordered open tasks from the earliest reminder to the latest, with untimed tasks at the bottom.</div></details><details><summary>v1.42 · Protected suite work</summary><div class="release-copy">Booking and Special work now uses purple suite, live-job and queued-job treatments to mark work that must not be interrupted.</div></details><details><summary>v1.41.1 · Mobile suite alignment</summary><div class="release-copy">Aligned staffed suite labels and status with the unused suite cards on compact mobile layouts.</div></details><details><summary>v1.41 · Task reminders</summary><div class="release-copy">Added task editing and optional timed reminders with custom dismiss and complete controls.</div></details><details><summary>v1.40.1 · Checklist wording</summary><div class="release-copy">Simplified the checklist heading to Edit 1.</div></details><details><summary>v1.40 · Daily task logs</summary><div class="release-copy">Bound tasks to the selected board date, stopped unfinished work carrying forward, and retained completed tasks as a daily record.</div></details><details><summary>v1.36 · Rapid task entry</summary><div class="release-copy">Added bulk task entry from dashed note lines, with an optional trailing * to star important items immediately.</div></details><details><summary>v1.35.5 · Priority task styling</summary><div class="release-copy">Made starred tasks brighter and more distinct with a matching outline and subtle elevation.</div></details><details><summary>v1.35.4 · Starred tasks</summary><div class="release-copy">Added persistent task starring so important open items remain above the rest.</div></details><details><summary>v1.35.3 · Quicker job entry</summary><div class="release-copy">Made No due time the default for new jobs while retaining optional deadlines.</div></details><details><summary>v1.35.2 · Mobile job entry</summary><div class="release-copy">Kept the New job window within the usable device height, with a fixed header and actions while job details scroll.</div></details><details><summary>v1.35.1 · Mobile header</summary><div class="release-copy">Changed New job to a compact plus on mobile so the checklist, theme and settings controls remain on one row.</div></details>');
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.43")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.44")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45.1")));
-    releaseSections[1].querySelector(".release-items").prepend([...releaseSections[1].querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.45.2")));
-    const previousReleases = releaseSections[1].querySelector(".release-items");
-    const release146 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46 ·"));
-    const release1461 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.1 ·"));
-    const release1462 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.2 ·"));
-    const release1464 = [...previousReleases.querySelectorAll("details")].find((item) => item.querySelector("summary")?.textContent.startsWith("v1.46.4 ·"));
-    const release1463 = document.createElement("details");
-    release1463.innerHTML = '<summary>v1.46.3 · Compact toggle polish</summary><div class="release-copy">Moved the compact-card switch into the open Job Queue header and refined its shape and label.</div>';
-    if (release146) previousReleases.prepend(release146);
-    if (release1461) previousReleases.prepend(release1461);
-    if (release1462) previousReleases.prepend(release1462);
-    previousReleases.prepend(release1463);
-    if (release1464) previousReleases.prepend(release1464);
-    detailDialog.showModal();
-  });
   document.getElementById("daySheetButton").addEventListener("click", openDaySheet);
   document.getElementById("editDaySheetButton").addEventListener("click", () => setDaySheetMode(true));
   document.getElementById("saveDaySheetButton").addEventListener("click", saveDaySheet);
@@ -2899,8 +2912,6 @@
     event.preventDefault();
     insertDaySheetHtml(html || escapeHtml(text).replace(/\n/g, "<br>"));
   });
-  document.getElementById("poolCollapseButton").addEventListener("click", () => toggleSection("pool"));
-  document.getElementById("editorsCollapseButton").addEventListener("click", () => toggleSection("editors"));
   document.getElementById("suiteFilterButton").addEventListener("click", cycleSuiteFilter);
   document.getElementById("completedCollapseButton").addEventListener("click", () => toggleSection("completed"));
   document.getElementById("biffedCollapseButton").addEventListener("click", () => toggleSection("biffed"));
@@ -2917,12 +2928,11 @@
   function setCompactQueueCards(enabled) {
     uiState.compactQueueCards = enabled;
     document.getElementById("compactQueueCards").checked = enabled;
-    document.getElementById("compactQueueQuickToggle").checked = enabled;
+    announceUi();
     saveUiState();
     renderPlannedJobs();
   }
   document.getElementById("compactQueueCards").addEventListener("change", (event) => setCompactQueueCards(event.target.checked));
-  document.getElementById("compactQueueQuickToggle").addEventListener("change", (event) => setCompactQueueCards(event.target.checked));
   document.getElementById("sectionStartup").addEventListener("change", (event) => {
     uiState.sectionStartup = event.target.value;
     applySectionStartupPreference();
@@ -2958,7 +2968,6 @@
     uiState.confirmJobActions = event.target.checked;
     saveUiState();
   });
-  document.getElementById("themeButton").addEventListener("click", cycleTheme);
   document.getElementById("previousDayButton").addEventListener("click", () => moveBoardDate(-1));
   document.getElementById("nextDayButton").addEventListener("click", () => moveBoardDate(1));
   todayButton.addEventListener("click", () => selectBoardDate(todayKey));
@@ -3071,7 +3080,6 @@
   applyTheme();
   document.getElementById("syncRetry").addEventListener("click", () => syncRetryAction?.());
   document.getElementById("syncReload").addEventListener("click", () => { void loadCloudBoard(selectedDateKey, false); });
-  clearLegacyBoards();
   window.addEventListener("beforeunload", (event) => { if (pendingSave || cloudBusy || todoPendingSave || todoSaving) { event.preventDefault(); event.returnValue = ""; } });
   setInterval(async () => {
     if (remoteCheckInFlight || !cloudReady || cloudBusy || document.hidden || document.querySelector("dialog[open]") || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
@@ -3084,7 +3092,7 @@
         const latest = await cloudRequest(date);
         if (!cloudReady || cloudBusy || date !== selectedDateKey || revision !== cloudRevision || latest.revision === revision) return;
         cloudReady = false;
-        state = latest.board || freshDayState(date); cloudRevision = latest.revision; savedSnapshot = JSON.stringify(state); render(); cloudReady = true;
+        state = latest.board || freshDayState(date); cloudRevision = latest.revision; savedSnapshot = JSON.stringify(state); remoteBoardChanges++; render(); cloudReady = true;
         syncStatus("Updated from your other device");
       }
     } catch { if (cloudReady) syncStatus("Could not check for updates · Changes will still be checked before saving"); }

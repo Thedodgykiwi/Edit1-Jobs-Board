@@ -3,6 +3,15 @@
 Day-to-day shift board for Edit 1: jobs, suites, editors, tasks and bookings.
 Plain HTML/CSS/JS, no build step, hosted on GitHub Pages.
 
+## Before anything else
+
+Every session, including a quick fix, follows the playbook's
+**session checklist**:
+https://github.com/Thedodgykiwi/app-playbook/blob/main/guides/session-checklist.md
+(choice card first, issue in the standard layout before any code, work on
+`dev`, run the checks, end with the Dev link). If the playbook isn't attached,
+attach it (`add_repo`) and read that file before starting.
+
 ## Playbook
 
 General processes, design patterns and gotchas live in
@@ -104,14 +113,13 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 |---|---|
 | `index.html` | The board's markup + stage banner + sign-in panel |
 | `board.js` | The board (original `app.js`): rendering, jobs, suites, editors, checklist, history search UI |
-| `board.css` | The board's original styles, incl. its light/dark theme (`html[data-theme]`) |
-| `playbook-look.css` | The playbook look on top of `board.css` (issue #1): kit colours, one font, flat cards, phone header. Restyle here, not by editing markup |
+| `board.css` | All styles in one file (issue #24), in three sections that must stay in order: 1. the board's original styles (light/dark theme), 2. the playbook look (issue #1), 3. the page shell (banner, sign-in, profile menu, section headers, suite columns, Undo bar, offline/install/update bars). Restyle in section 2 or 3, not by editing markup. 11 `!important` remain on purpose (font, flat cards, phone header, `[hidden]`): each was checked to be needed |
 | `cloud.js` | Firestore storage (`window.Edit1Cloud`) + sign-in gate / access check |
 | `pwa.js`, `sw.js` | Works offline, Install app (profile menu + one-time tip), "A new version is ready · Reload" bar. From the playbook starter |
 | `whatsnew.js` | Version + "What's new" at the bottom of the profile menu, from the deploy's `releases.json` (ported from the starter's menu.js). The board's old built-in changelog button is hidden |
-| `shell.js`, `shell.css` | Stage banner, sign-in panel styles, and the profile menu (Google photo → theme, Board settings, Sign out). The board's own theme/settings buttons are hidden (`.moved-to-menu`) but still drive the board; the menu clicks them. Also the Job Queue header (issue #3): the title opens/closes the queue and a Cards / List switch sets compact cards, driving the hidden `#poolCollapseButton` / `#compactQueueQuickToggle`. Editors & suites header (issue #4): two icon buttons (editor list, Job Queue show/hide) drive the hidden `#editorsCollapseButton` / `#queueVisibilityButton`. Suite cards (issue #6) flow down columns (3 / 2 below 1260px / 1 below 800px), each only as tall as its content |
+| `shell.js` | Stage banner, the profile menu (Google photo → theme, Board settings, Sign out), the Job Queue header (issue #3: title opens/closes, Cards / List switch), the Editors & suites header (issue #4: editor-list and Job Queue icons; issue #17: collapse arrow, remembered per device and stage) and the suite-card columns (issue #6: 3 / 2 below 1260px / 1 below 800px). These controls call the board directly through `window.Edit1Board` (setTheme, openSettings, togglePool, toggleEditors, toggleQueueShown, setCompactQueueCards) and follow its `board:ui` event (issue #22); the board's old buttons for them have been removed |
 | `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
-| `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`) |
+| `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`), and a check of the board's main features against the emulators (`npm run test:board`, issue #21; needs Playwright) |
 
 - `board.js` must load **after** `cloud.js` (it's `defer`, cloud.js is a module; both run in order).
 - Saves use a **revision number** (compare-and-swap): a save only goes
@@ -122,6 +130,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 - History search runs in the browser over all saved days (`cloud.js`
   `search`/`facets`, a port of the old SQL in the reference zip).
 - Display settings stay per device (localStorage); unsaved-draft keys are per stage.
+- Undo (issue #12): Complete, Pause, Biff and Return show an 8-second Undo bar (board.js `offerUndo`). Undo restores the whole day's board from just before the action, and refuses if the board changed from the cloud in between (`remoteBoardChanges`).
 - Offline + install + "new version ready" bar (issue #8): `pwa.js` / `sw.js` from the starter. Offline, `cloud.js` falls back to the copy saved on the device (read-only in practice: saves need a connection), and the board's sync line is hidden behind the offline strip.
 - Browser storage is shared by all stages and apps on `thedodgykiwi.github.io`: key it per app and stage.
 
