@@ -1,3 +1,11 @@
+/* Edit 1 Job Board: all styles in one file (issue #24).
+   1. The board's original styles (ported from the ChatGPT version), incl. its light/dark theme.
+   2. The playbook look on top (issue #1): kit colours, one font, flat cards, phone header.
+   3. The page shell: stage banner, sign-in panel, profile menu, section headers,
+      suite columns, Undo bar, offline / install / update bars, Biff dialog.
+   Later sections deliberately build on earlier ones, so keep this order. */
+
+/* ==== 1. Board ============================================================== */
 :root {
   color-scheme: dark;
   --bg: #080a0d;
@@ -583,7 +591,7 @@ main { padding-top: 18px; }
 .confirm-copy strong { color: var(--text); }
 .metadata-dialog { width: min(430px, calc(100% - 30px)); }
 .day-sheet-dialog { width: min(720px, calc(100% - 30px)); }
-.day-sheet-dialog [hidden] { display: none !important; }
+.day-sheet-dialog [hidden] { display: none; }
 .day-sheet-intro { margin: -8px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .day-sheet-view { min-height: min(38vh, 320px); max-height: 50vh; overflow: auto; padding: 2px 3px 2px 0; color: #dfe5ec; font-size: 14px; line-height: 1.6; }
 .day-sheet-view h3 { margin: 18px 0 7px; color: var(--text); font-size: 16px; line-height: 1.3; }
@@ -592,7 +600,7 @@ main { padding-top: 18px; }
 .day-sheet-view p { margin: 0 0 10px; }
 .day-sheet-view ul, .day-sheet-view ol { margin: 0 0 12px; padding-left: 22px; }
 .day-sheet-view a { color: var(--cyan); text-decoration-color: rgba(91,214,245,.55); }
-.day-sheet-empty { display: grid; min-height: 170px; place-items: center; margin: 0 !important; border: 1px dashed var(--line); border-radius: 9px; color: var(--muted); text-align: center; }
+.day-sheet-empty { display: grid; min-height: 170px; place-items: center; margin: 0; border: 1px dashed var(--line); border-radius: 9px; color: var(--muted); text-align: center; }
 .day-sheet-toolbar { display: flex; align-items: center; gap: 5px; padding: 7px; border: 1px solid var(--line); border-bottom: 0; border-radius: 9px 9px 0 0; background: #0d1116; }
 .day-sheet-toolbar button { width: 30px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #b6c0ca; font: 700 12px/1 "DM Sans", sans-serif; }
 .day-sheet-toolbar button:hover { border-color: #394450; background: #18202a; color: var(--text); }
@@ -1120,7 +1128,7 @@ html[data-theme="light"] .toast.toast-danger { border-color: #dc9da7; background
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  *, *::before, *::after { scroll-behavior: auto; transition: none; }
 }
 
 /* A floating circular wheel with no rectangular dialog surface. */
@@ -1172,7 +1180,7 @@ html[data-theme="light"] .todo-note-icon { color: #78539e; }
 .history-search-dialog { width: min(800px, calc(100% - 24px)); }
 .history-search-dialog .dialog-panel { display: flex; flex-direction: column; max-height: 88dvh; padding: 24px; }
 .history-search-dialog .dialog-heading { flex-shrink: 0; }
-.history-search-dialog [hidden] { display: none !important; }
+.history-search-dialog [hidden] { display: none; }
 .history-search-list-view { display: flex; flex-direction: column; min-height: 0; }
 .history-search-filters { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; flex-shrink: 0; }
 .history-search-filters .field { min-width: 0; margin-bottom: 0; }
@@ -1209,3 +1217,279 @@ html[data-theme="light"] .history-search-result { background: #f4f7fa; }
   .history-search-result-top { flex-direction: column; gap: 5px; }
   #historySearchBack { padding: 6px; font-size: 13px; }
 }
+
+/* ==== 2. Playbook look (issue #1) =========================================== */
+/* Playbook look for the Edit 1 board (issue #1): restyles the board's own
+   markup only. Colours from the playbook style kit (style.css "B"). */
+:root, html[data-theme="dark"] {
+  --bg: #15171b; --panel: #1d2025; --panel-2: #23272d; --line: #30353d; --line-soft: #2a2e35;
+  --text: #e8eaed; --muted: #a7adb6; --muted-2: #8a919c;
+  --cyan: #3bc9db; --green: #69db7c; --amber: #ffc078; --urgent: #ffd43b; --hold: #74c0fc;
+  --red: #ff6b6b; --pink: #f06595; --violet: #b197fc;
+  --shadow: 0 10px 30px rgba(0,0,0,.5);
+  --kit-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--kit-font);
+}
+html[data-theme="light"] {
+  --bg: #f8f9fb; --panel: #fff; --panel-2: #f1f3f5; --line: #e3e6eb; --line-soft: #eceef1;
+  --text: #1d1f23; --muted: #5f6570; --muted-2: #7a808a;
+  --cyan: #0b7285; --green: #2b8a3e; --amber: #a35200; --urgent: #a35200; --hold: #1971c2;
+  --red: #e03131; --pink: #c2255c; --violet: #7048e8;
+  --shadow: 0 10px 30px rgba(0,0,0,.15);
+}
+/* One plain font everywhere (the old board mixed in a typewriter font) */
+body, body * { font-family: var(--kit-font) !important; letter-spacing: normal !important; }
+.eyebrow, .suite-number, .status-label, .count-badge { text-transform: none; }
+body, html[data-theme="light"] body { background: var(--bg); }
+/* Flat surfaces, soft borders, the kit's rounding */
+.operations, .workflow-column, .summary-item, .suite-card, .job-dialog, .editor-radar,
+html[data-theme="light"] .operations, html[data-theme="light"] .workflow-column,
+html[data-theme="light"] .suite-card, html[data-theme="light"] .summary-item {
+  background: var(--panel) !important; border-color: var(--line) !important; box-shadow: 0 1px 3px rgba(16,24,40,.08) !important; border-radius: 12px;
+}
+.suite-card::before { box-shadow: none !important; }
+/* Buttons: kit look (accent for the main action, neutral otherwise) */
+.button, .icon-button, .theme-button, .collapse-button, .date-step-button, .today-button, .date-picker-control,
+.supervisor-todo-button, .brand-mark { border-radius: 8px !important; box-shadow: none !important; }
+.button-primary, html[data-theme="light"] .button-primary, .detail-add-job, html[data-theme="light"] .detail-add-job {
+  background: var(--cyan); color: #fff; box-shadow: none;
+}
+html[data-theme="dark"] .button-primary { color: #032b30; }
+.brand-mark, html[data-theme="light"] .brand-mark { background: var(--cyan); color: #fff; border-color: transparent; }
+.brand-mark span, .brand-mark strong { color: inherit; }
+.brand-title-row h1 span { color: var(--muted); }
+/* Badges as soft pills */
+.work-type, .count-badge, .due-warning-badge, .pool-state { border-radius: 99px; font-weight: 600; }
+/* Topbar: no gradient */
+.topbar { background: none; }
+#syncBar { font-size: .8rem; }
+/* Breathing room between New job (+) and the profile photo (issue #25) */
+.topbar-actions .profile { margin-left: .5rem; }
+/* Phone: keep the header on one row with nothing cut off */
+@media (max-width: 600px) {
+  .topbar { gap: .5rem; }
+  .topbar-actions { gap: .35rem; flex-wrap: nowrap; }
+  .topbar-actions .button, .topbar-actions .icon-button, .topbar-actions .theme-button { min-width: 2.4rem !important; width: 2.4rem !important; height: 2.4rem; padding: 0; }
+  .brand-lockup { gap: .5rem; min-width: 0; }
+  .brand-mark { width: 2.4rem; height: 2.4rem; }
+  .brand-title-row h1 { font-size: 1.05rem; }
+  .brand-title-row { gap: .3rem; }
+}
+
+/* Board messages (issue #16): the playbook's dark card, like the Undo bar, with a
+   small colour dot for the kind of message. Same wording and timing as before. */
+html .toast, html[data-theme] .toast, html[data-theme] .toast[class*="toast-"] {
+  display: flex; align-items: center; gap: .6rem;
+  width: min(420px, calc(100vw - 1.5rem)); max-width: none;
+  padding: .75rem .9rem; border: 0; border-radius: 12px;
+  background: #1d1f23; color: #fff; font-size: .88rem; font-weight: 600; line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+.toast::before { content: ""; flex: none; width: .6rem; height: .6rem; border-radius: 50%; background: var(--toast-dot, #74c0fc); }
+.toast.toast-info, .toast.toast-park { --toast-dot: #74c0fc; }
+.toast.toast-complete { --toast-dot: #69db7c; }
+.toast.toast-break { --toast-dot: #b197fc; }
+.toast.toast-biff { --toast-dot: #f783ac; }
+.toast.toast-danger { --toast-dot: #ff8787; }
+
+/* ==== 3. Page shell ========================================================== */
+/* Page shell around the board (board.css is the board's own look). */
+[hidden] { display: none !important; }
+
+/* Stage banner (shell.js): in the page flow, so it never covers the board's header */
+#stage-banner {
+  position: relative; z-index: 10; padding: .4rem 1rem;
+  display: flex; justify-content: center; align-items: center;
+  font-weight: 600; color: #fff; letter-spacing: .05em; font-size: .85rem;
+}
+.stage-dev     { background: #7048e8; }
+.stage-alpha   { background: #c2255c; }
+.stage-staging { background: #c25e00; }   /* darker than the icon orange so white text stays readable */
+.stage-local   { background: #495057; }
+#pipeline-link {
+  position: absolute; right: .6rem; top: 50%; transform: translateY(-50%);
+  color: #fff; text-decoration: none; font-size: .75rem; letter-spacing: .02em; font-weight: 600;
+  padding: .15rem .5rem; border-radius: 999px; background: rgba(0, 0, 0, .18);
+}
+#pipeline-link::after { content: " ↗"; }
+#pipeline-link:hover { background: rgba(0, 0, 0, .3); text-decoration: underline; }
+#pipeline-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Sign-in panel (cloud.js) */
+.gate {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1.5rem;
+  background: var(--bg);
+}
+#stage-banner:not([hidden]) ~ .gate { top: 2.1rem; }
+.gate-card {
+  width: min(24rem, 100%); padding: 2rem 1.5rem; text-align: center;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow);
+  display: grid; gap: 1rem; justify-items: center;
+}
+.gate-card h1 { margin: 0; font-size: 1.5rem; }
+.gate-card h1 span { color: var(--muted); font-weight: 500; }
+.gate-card p { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.gate-mark { pointer-events: none; }
+
+
+/* Profile menu (shell.js): Google photo, opens theme / Settings / Sign out */
+.profile { position: relative; flex: none; }
+.profile-btn {
+  width: 2.6rem; height: 2.6rem; padding: 0; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--cyan); color: #fff; font-weight: 700; display: grid; place-items: center; overflow: hidden; cursor: pointer;
+}
+.profile-btn img { width: 100%; height: 100%; object-fit: cover; }
+.profile-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.profile-panel {
+  position: absolute; right: 0; top: calc(100% + .5rem); z-index: 40; width: min(17rem, calc(100vw - 2rem));
+  display: grid; gap: .5rem; padding: .8rem; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel); color: var(--text); box-shadow: var(--shadow);
+}
+.profile-who { margin: 0 0 .2rem; display: grid; gap: .1rem; overflow-wrap: anywhere; }
+.profile-who span { color: var(--muted); font-size: .82rem; }
+.profile-label { margin: .2rem 0 0; font-size: .78rem; font-weight: 600; color: var(--muted); }
+.profile-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel-2); }
+.profile-seg button { flex: 1; padding: .35rem .5rem; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+.profile-seg button[aria-checked="true"] { background: var(--panel); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.profile-item { text-align: left; padding: .55rem .6rem; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; cursor: pointer; }
+.profile-item:hover, .profile-seg button:hover { background: var(--panel-2); }
+@media (max-width: 600px) { .profile-btn { width: 2.4rem; height: 2.4rem; } }
+
+/* Version + What's new (whatsnew.js), same as the playbook starter */
+.profile-sep { border: 0; border-top: 1px solid var(--line); margin: .2rem 0 0; width: 100%; }
+.version-btn { justify-self: center; border: 0; background: none; color: var(--muted); font: inherit; font-size: .78rem; padding: .25rem .5rem; cursor: pointer; }
+.version-btn:hover { color: var(--cyan); text-decoration: underline; }
+.whats-new-dialog { width: min(36rem, calc(100vw - 2rem)); }
+.whats-new-body { max-height: 70vh; overflow: auto; line-height: 1.5; }
+.whats-new-body h3 { font-size: 1.05rem; margin: .4rem 0; } .whats-new-body h4 { font-size: .95rem; margin: .8rem 0 .3rem; }
+.whats-new-body ul { padding-left: 1.2rem; margin: .3rem 0; }
+.whats-new-body p { margin: .4rem 0; }
+.muted { color: var(--muted); }
+.release { padding-bottom: .6rem; border-bottom: 1px solid var(--line); margin-bottom: .6rem; }
+.release:last-child { border-bottom: 0; }
+.release.rolled-back { opacity: .6; }
+.release-meta { color: var(--muted); font-size: .82rem; margin: 0; }
+.day-head { display: flex; justify-content: space-between; align-items: baseline; margin: .9rem 0 .35rem; font-size: .9rem; }
+.day-head .muted { font-size: .78rem; }
+.whats-new-body ul.changes { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; }
+.whats-new-body .changes > li { display: flex; gap: .5rem; align-items: flex-start; padding: .5rem .7rem; border-top: 1px solid var(--line); }
+.whats-new-body .changes > li:first-child { border-top: 0; }
+.whats-new-body .grow { flex: 1; }
+.change-emoji { width: 1.4em; flex: none; text-align: center; }
+.change-time { color: var(--muted); font-size: .76rem; white-space: nowrap; padding-top: .1rem; }
+.issue-pill { font-size: .72rem; border: 1px solid var(--line); border-radius: 99px; padding: 0 .4rem; color: var(--muted); white-space: nowrap; }
+.whats-new-body .wn-range { margin: 1rem 0 .2rem; }
+.whats-new-body .done-divider { display: flex; align-items: center; width: 100%; gap: .4rem; padding: .35rem 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+.whats-new-body .done-divider::before, .whats-new-body .done-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* Job Queue header (issue #3): the title is the open/close button, the arrow sits right after the count */
+.queue-title-toggle {
+  display: inline-flex; align-items: center; gap: .55rem; padding: 0; border: 0; background: none;
+  color: inherit; font: inherit; cursor: pointer; text-align: left; border-radius: 8px;
+}
+.queue-title-toggle .count-badge { margin: 0; }
+.queue-chevron {
+  width: 1.9rem; height: 1.9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+  display: inline-grid; place-items: center; flex: none; color: var(--muted); transition: transform .2s;
+}
+.queue-chevron svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.queue-title-toggle[aria-expanded="true"] .queue-chevron { transform: rotate(180deg); }
+.queue-title-toggle:hover .queue-chevron { color: var(--text); border-color: var(--muted-2); }
+.queue-title-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.queue-view-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); }
+.queue-view-seg button { width: 2.3rem; height: 2rem; border: 0; border-radius: 8px; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.queue-view-seg button[aria-checked="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.queue-view-seg svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.collapsible-section.collapsed .queue-view-seg { display: none; }
+#poolSection .column-heading { flex-wrap: nowrap; }
+
+/* Editors & suites header (issue #4): editor list + Job Queue as small icon buttons */
+.operations .editor-view-actions { display: flex; flex-direction: row; align-items: center; gap: .4rem; flex-wrap: nowrap; width: auto; }
+.section-icon-btn {
+  width: 2.4rem; height: 2.4rem; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text);
+}
+.section-icon-btn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.section-icon-btn:hover { background: var(--panel-2); }
+.section-icon-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.section-icon-btn[aria-expanded="true"] { background: var(--panel-2); border-color: var(--muted-2); }
+.section-icon-btn[aria-pressed="false"] { color: var(--muted-2); border-style: dashed; }
+.operations > .section-heading { flex-wrap: nowrap; align-items: flex-start; }
+
+/* iPhone: if Safari still wraps an email in a link, keep it plain (issue #5) */
+.profile-who a, .profile-who a[x-apple-data-detectors] { color: inherit; text-decoration: none; }
+
+/* Suite cards (issue #6): flow down columns like a newspaper, each card only as
+   tall as its content. Same column counts as the board: 3, 2 below 1260px, 1 below 800px.
+   display: table + break-inside keeps Safari from splitting a card across columns
+   (inline-block also does, but then the columns don't balance). */
+.suite-grid { display: block; columns: 3; column-gap: 12px; }
+.suite-grid > * { display: table; table-layout: fixed; width: 100%; margin: 0 0 12px; break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid; }
+.suite-grid.compact-suites { column-gap: 7px; }
+.suite-grid.compact-suites > * { margin-bottom: 7px; }
+.suite-grid.suite-filter-empty { columns: 1; }
+@media (max-width: 1260px) { .suite-grid { columns: 2; } }
+@media (max-width: 800px) { .suite-grid { columns: 1; } }
+/* ...but not the "Nobody busy / free / assigned" message: keep its own centred layout (issue #7) */
+.suite-grid > .empty-state { display: grid; margin: 0; }
+
+/* Offline + install + new version (pwa.js, issue #8), as in the playbook starter */
+.offline-strip { position: sticky; top: 0; z-index: 30; padding: .4rem 1rem; text-align: center; font-size: .82rem; font-weight: 600; background: #fff4e6; color: #8a4400; border-bottom: 1px solid #ffd8a8; }
+html[data-theme="dark"] .offline-strip { background: #3d2a12; color: #ffc078; border-color: #5c3d14; }
+.install-btn { color: var(--cyan); font-weight: 600; }
+.offline-ready { margin: 0; text-align: center; font-size: .76rem; color: var(--green); }
+.steps { margin: .4rem 0 .8rem; padding-left: 1.3rem; line-height: 1.7; }
+.install-tip, .update-bar {
+  position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 45;
+  width: min(440px, calc(100vw - 1.5rem)); display: flex; align-items: center; gap: .6rem;
+  padding: .7rem .8rem; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.3); font-size: .88rem;
+}
+.install-tip { background: #1d1f23; color: #fff; }
+.install-tip p { margin: 0; display: grid; gap: .1rem; flex: 1; }
+.install-tip p span { color: #ced4da; font-size: .8rem; }
+.install-tip button, .update-bar button { border: 0; border-radius: 8px; font: inherit; cursor: pointer; }
+.install-tip-go { background: #74c0fc; color: #04213d; font-weight: 700; padding: .4rem .8rem; white-space: nowrap; }
+.install-tip-x { background: none; color: #adb5bd; padding: .3rem .5rem; }
+.update-bar { background: var(--cyan); color: #fff; justify-content: space-between; }
+html[data-theme="dark"] .update-bar { color: #032b30; }
+.update-bar button { background: var(--panel); color: var(--text); font-weight: 700; padding: .35rem .8rem; }
+body.is-offline #syncBar { display: none; }   /* the offline strip explains instead of "Up to date" */
+
+/* Undo bar (board.js, issue #12): after Complete, Pause, Biff or Return; 8-second countdown */
+.undo-bar {
+  position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 55;
+  width: min(420px, calc(100vw - 1.5rem)); border-radius: 12px; overflow: hidden;
+  background: #1d1f23; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.35); font-size: .88rem; font-weight: 600;
+}
+.undo-row { display: flex; align-items: center; gap: .8rem; padding: .75rem .9rem; }
+.undo-message { flex: 1; min-width: 0; }
+.undo-button { flex: none; border: 0; border-radius: 8px; background: #74c0fc; color: #04213d; font: inherit; font-weight: 700; padding: .45rem .9rem; cursor: pointer; }
+.undo-button:hover { background: #a5d8ff; }
+.undo-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.undo-countdown { height: 3px; background: #74c0fc; transform-origin: left; animation: undo-countdown 8s linear forwards; }
+@keyframes undo-countdown { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .undo-countdown { animation: none; } }
+
+/* Biff dialog (issue #13, only when "Confirm job actions" is on): full-width buttons on phones */
+@media (max-width: 600px) {
+  #biffDialog .dialog-actions { display: flex; flex-direction: column-reverse; gap: .6rem; }
+  #biffDialog .dialog-actions .button { width: 100%; min-height: 2.8rem; }
+}
+
+/* Job Queue cards (issue #14): editor drop-down + Send button sit at the bottom of every
+   card, so they line up across a row whatever the content above them */
+#plannedJobs .job-card { display: flex; flex-direction: column; }
+#plannedJobs .job-card > .job-actions { margin-top: auto; }
+
+/* Editors & suites collapse (issue #17): arrow sits on the title's line, like the Job Queue's */
+.suites-title-row { display: flex; align-items: flex-end; gap: .55rem; min-width: 0; }
+.suites-collapse-toggle { flex: none; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; border-radius: 8px; }
+.suites-collapse-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.suites-collapse-toggle[aria-expanded="true"] .queue-chevron { transform: rotate(180deg); }
+.suites-collapse-toggle:hover .queue-chevron { color: var(--text); border-color: var(--muted-2); }
+.operations.suites-collapsed #suiteGrid, .operations.suites-collapsed #editorsPanel { display: none; }
+.operations.suites-collapsed > .section-heading { margin-bottom: 0; }
+/* Editor-list and queue icons sit on the same line as the title and arrow */
+.operations > .section-heading { align-items: flex-end; }
+.suites-collapse-toggle { margin-bottom: -2px; }
+.operations .editor-view-actions { margin-bottom: -6px; }
