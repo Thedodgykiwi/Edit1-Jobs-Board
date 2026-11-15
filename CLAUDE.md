@@ -111,7 +111,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
 | `whatsnew.js` | Version + "What's new" at the bottom of the profile menu, from the deploy's `releases.json` (ported from the starter's menu.js). The board's old built-in changelog button is hidden |
 | `shell.js`, `shell.css` | Stage banner, sign-in panel styles, and the profile menu (Google photo → theme, Board settings, Sign out). The board's own theme/settings buttons are hidden (`.moved-to-menu`) but still drive the board; the menu clicks them. Also the Job Queue header (issue #3): the title opens/closes the queue and a Cards / List switch sets compact cards, driving the hidden `#poolCollapseButton` / `#compactQueueQuickToggle`. Editors & suites header (issue #4): two icon buttons (editor list, Job Queue show/hide) drive the hidden `#editorsCollapseButton` / `#queueVisibilityButton`. Suite cards (issue #6) flow down columns (3 / 2 below 1260px / 1 below 800px), each only as tall as its content. Editors & suites collapse (issue #17): arrow beside the title, remembered per device and stage |
 | `account.js`, `firebase-config.js` | Google sign-in (playbook starter) |
-| `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`) |
+| `firestore.rules`, `tests/` | Security rules + tests (`npm install && npm run test:rules`), and a check of the board's main features against the emulators (`npm run test:board`, issue #21; needs Playwright) |
 
 - `board.js` must load **after** `cloud.js` (it's `defer`, cloud.js is a module; both run in order).
 - Saves use a **revision number** (compare-and-swap): a save only goes
