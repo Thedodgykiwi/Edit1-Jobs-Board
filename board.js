@@ -141,16 +141,6 @@
     document.getElementById("syncReload").hidden = !conflict;
   }
 
-  function clearLegacyBoards() {
-    try {
-      Object.keys(localStorage)
-        .filter((key) => /^edit1-shift-board:\d{4}-\d{2}-\d{2}$/.test(key))
-        .forEach((key) => localStorage.removeItem(key));
-    } catch (error) {
-      console.warn("Could not clear legacy browser boards; will retry on next opening.", error);
-    }
-  }
-
   // Storage lives in cloud.js (Cloud Firestore); same results the old server API gave.
   function cloudRequest(date, payload, options = {}) {
     return window.Edit1Cloud.board(date, payload, options);
@@ -2350,34 +2340,8 @@
     }
     // Issues #10 / #11: pausing keeps the job on its suite card, at the top of
     // "Coming up next"; ▶ resumes it (one running job per suite, except Edit 1)
-    // and ↩ parks it in the Job Queue. The old park-to-queue code below is kept
-    // but no longer reached from the Pause button.
+    // and ↩ parks it in the Job Queue.
     return pauseInSuite(job, editor);
-    if (!(await confirmJobAction({
-      eyebrow: "Confirm pause",
-      title: "Park this job?",
-      jobName: job.title,
-      message: " will pause and return to the Job Queue.",
-      confirmLabel: "Park",
-      confirmClass: "button-park"
-    }))) return;
-    const origin = {
-      editorId: job.editorId,
-      editorName: editor?.name || "Previous editor",
-      suite: job.suite,
-      parkedAt: currentTime()
-    };
-    job.parkHistory = [...(job.parkHistory || []), origin];
-    job.status = "parked";
-    job.parkedAt = origin.parkedAt;
-    job.parkedFromEditorId = origin.editorId;
-    job.parkedFromEditorName = origin.editorName;
-    job.parkedFromSuite = origin.suite;
-    recordJobEvent(job, "parked", { editorId: origin.editorId, suite: origin.suite });
-    delete job.suite;
-    const remainingActive = activeJobsForEditor(origin.editorId).length;
-    showToast(`${job.title} returned to the Job Queue · ${remainingActive ? `${origin.editorName} remains busy with ${remainingActive} live job${remainingActive === 1 ? "" : "s"}` : `${origin.editorName} and ${suiteLabel(origin.suite)} are free`}`, "park");
-    render();
   }
 
   async function pauseInSuite(job, editor) {
@@ -3160,7 +3124,6 @@
   applyTheme();
   document.getElementById("syncRetry").addEventListener("click", () => syncRetryAction?.());
   document.getElementById("syncReload").addEventListener("click", () => { void loadCloudBoard(selectedDateKey, false); });
-  clearLegacyBoards();
   window.addEventListener("beforeunload", (event) => { if (pendingSave || cloudBusy || todoPendingSave || todoSaving) { event.preventDefault(); event.returnValue = ""; } });
   setInterval(async () => {
     if (remoteCheckInFlight || !cloudReady || cloudBusy || document.hidden || document.querySelector("dialog[open]") || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
