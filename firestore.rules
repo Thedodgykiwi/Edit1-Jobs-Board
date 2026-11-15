@@ -57,7 +57,10 @@ service cloud.firestore {
     }
     match /issueReports/{reportId} {
       allow create: if tester()
-        && request.resource.data.keys().hasOnly(['title', 'body', 'type', 'stage', 'uid', 'email', 'status', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['title', 'body', 'type', 'stage', 'uid', 'email', 'status', 'createdAt', 'screenshot'])
+        && (!('screenshot' in request.resource.data) || (request.resource.data.screenshot is string
+          && request.resource.data.screenshot.size() <= 750000
+          && request.resource.data.screenshot.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')))   // optional screenshot (issue #29)
         && request.resource.data.keys().hasAll(['title', 'body', 'type', 'stage', 'uid', 'email', 'status', 'createdAt'])
         && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 120
         && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 5000
