@@ -1,70 +1,12 @@
-// App menu (top-right): theme (Light / Auto / Dark), Settings panel,
-// and the version number at the bottom, which opens "What's new".
-// Works with or without Google sign-in; account.js adds the photo, name and
-// Sign in / Sign out when sign-in is switched on.
-//
-// Preferences are kept on this device. Every app on <user>.github.io shares
-// one browser storage, so the key includes the app's folder name.
-// (index.html applies them before the page draws, so there's no flash.)
-(() => {
-  const PREFS_KEY = `prefs:${location.pathname.split('/')[1] || 'app'}`;
-  // The app's default accent is the data-accent on <html> in index.html.
-  const DEFAULTS = { theme: 'auto', textSize: 'standard', accent: document.documentElement.dataset.accent || 'blue' };
-  const load = () => { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') }; } catch { return { ...DEFAULTS }; } };
-  const prefs = load();
-  const root = document.documentElement;
+// Version + "What's new" at the bottom of the profile menu (issue #2).
+// Same as the playbook starter's menu.js: reads releases.json, which the
+// shared deploy writes for each stage from the promotions' release notes
+// (Dev: recent changes by day). Replaces the board's old built-in changelog.
+(function () {
+  'use strict';
   const STAGE = window.STAGE || 'local';
   const STAGE_NAMES = { main: 'Production', staging: 'Staging', alpha: 'Alpha', dev: 'Dev', local: 'Local' };
   const $ = (id) => document.getElementById(id);
-
-  // ---- Preferences (theme, text size): radio-style button groups ----------
-  function applyPrefs() {
-    root.dataset.theme = prefs.theme;
-    root.dataset.textSize = prefs.textSize;
-    root.dataset.accent = prefs.accent;
-    document.querySelectorAll('[data-pref]').forEach((group) => {
-      group.querySelectorAll('[data-value]').forEach((b) => {
-        const on = b.dataset.value === prefs[group.dataset.pref];
-        b.setAttribute('aria-checked', on);
-        b.tabIndex = on ? 0 : -1;
-      });
-    });
-  }
-  document.querySelectorAll('[data-pref]').forEach((group) => {
-    const pick = (b) => {
-      prefs[group.dataset.pref] = b.dataset.value;
-      try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* storage blocked */ }
-      applyPrefs();
-    };
-    group.addEventListener('click', (e) => { const b = e.target.closest('[data-value]'); if (b) pick(b); });
-    group.addEventListener('keydown', (e) => {  // arrow keys move between options
-      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-      if (!step) return;
-      e.preventDefault();
-      const opts = [...group.querySelectorAll('[data-value]')];
-      const next = opts[(opts.indexOf(document.activeElement) + step + opts.length) % opts.length];
-      pick(next); next.focus();
-    });
-  });
-  applyPrefs();
-
-  // ---- Menu open / close ----------------------------------------------------
-  const box = $('account'), btn = $('account-btn'), menu = $('account-menu');
-  const setMenu = (open) => { menu.hidden = !open; btn.setAttribute('aria-expanded', open); };
-  btn.addEventListener('click', () => setMenu(menu.hidden));
-  document.addEventListener('click', (e) => { if (!box.contains(e.target)) setMenu(false); });
-  box.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !menu.hidden) { setMenu(false); btn.focus(); }
-  });
-  window.AppMenu = { close: () => setMenu(false) };
-
-  // ---- Panels (Settings, What's new) -----------------------------------------
-  // <dialog> handles focus and Escape; a tap on the dimmed backdrop closes it.
-  document.querySelectorAll('dialog.sheet').forEach((d) => {
-    d.addEventListener('click', (e) => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
-  });
-  $('styleguide-link').hidden = STAGE === 'main';
-  $('open-settings').addEventListener('click', () => { setMenu(false); $('settings').showModal(); });
 
   // ---- Version + What's new (releases.json, written per stage by the deploy) --
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -135,7 +77,7 @@
       if (!items.length) return '';
       const isOpen = open.has(key), id = `wn-${key}`;
       return `<h3 class="wn-range"><button type="button" class="done-divider" data-range="${key}" aria-expanded="${isOpen}" aria-controls="${id}">
-          <span>${label} · ${items.length} ${countWord(items.length)}</span>${icon(isOpen ? 'caret-up' : 'caret-down', 'chevron').outerHTML}</button></h3>
+          <span>${label} · ${items.length} ${countWord(items.length)}</span><span class="chevron" aria-hidden="true">${isOpen ? '▴' : '▾'}</span></button></h3>
         <div id="${id}" ${isOpen ? '' : 'hidden'}>${items.map(draw).join('')}</div>`;
     }).join('');
     return draw(latest) + sections;
@@ -148,7 +90,7 @@
     try { localStorage.setItem(OPEN_KEY, JSON.stringify([...open])); } catch { /* storage blocked */ }
     $(b.getAttribute('aria-controls')).hidden = !isOpen;
     b.setAttribute('aria-expanded', isOpen);
-    b.querySelector('.chevron').replaceWith(icon(isOpen ? 'caret-up' : 'caret-down', 'chevron'));
+    b.querySelector('.chevron').textContent = isOpen ? '▴' : '▾';
   });
 
   function render() {
@@ -198,9 +140,10 @@
   }
 
   $('version-btn').addEventListener('click', async () => {
-    setMenu(false);
+    $('profileButton').click();   // close the profile menu
     await loaded;
     $('whats-new-body').innerHTML = render();
     $('whats-new').showModal();
   });
+  $('whats-new').addEventListener('click', (e) => { if (e.target === $('whats-new') || e.target.closest('[data-close]')) $('whats-new').close(); });
 })();
