@@ -128,7 +128,7 @@ Firestore. So this app does **not** use the starter's Preact/style kit.
   changed this board" and keeps the unsaved copy on the device. A live
   listener tells the board's 10-second check about new revisions without
   extra reads.
-- History search runs in the browser over all saved days (`cloud.js`
+- History search runs in the browser over all saved days (issue #19: the first search on a device reads every day, later ones only days saved since, via `updatedAt >=` and the device copy; per-stage localStorage key `history-synced-to`) (`cloud.js`
   `search`/`facets`, a port of the old SQL in the reference zip).
 - Display settings stay per device (localStorage); unsaved-draft keys are per stage.
 - Undo (issue #12): Complete, Pause, Biff and Return show an 8-second Undo bar (board.js `offerUndo`). Undo restores the whole day's board from just before the action, and refuses if the board changed from the cloud in between (`remoteBoardChanges`).
