@@ -1,4 +1,4 @@
-// Works offline + install (option B from the mock-up):
+// Works offline + install (issue #8; the playbook starter's pwa.js, adapted to the board):
 // - registers the service worker (sw.js) so the app opens without a connection;
 // - an orange strip while offline;
 // - "A new version is ready. Reload" when a newer build has been deployed;
@@ -31,6 +31,14 @@
         const urls = performance.getEntriesByType('resource').map((r) => r.name.split('#')[0]);
         if (!offline) reg.active?.postMessage({ type: 'save-for-offline', urls });
         else $('offline-ready').hidden = false;   // offline and still running: it's saved
+        // The Firebase library loads a moment later (account.js imports it after
+        // the page has loaded), so ask again once sign-in is ready: otherwise it
+        // is only saved for offline use from the second visit.
+        window.AppAccount?.ready.then((ok) => {
+          if (!ok || offline) return;
+          const later = performance.getEntriesByType('resource').map((r) => r.name.split('#')[0]);
+          reg.active?.postMessage({ type: 'save-for-offline', urls: later });
+        });
       } catch (err) { console.warn('Offline mode unavailable:', err); }
     });
   }
@@ -100,7 +108,7 @@
   }
 
   async function install() {
-    window.AppMenu?.close();
+    if (!$('profileMenu').hidden) $('profileButton').click();   // close the profile menu
     if (isIOS) { $('ios-install').showModal(); return; }
     if (!installEvent) return;
     installEvent.prompt();
@@ -123,5 +131,10 @@
   setTimeout(refresh, 2500);
   btn.hidden = !canInstall();
 
-  const toast = (message, ms) => window.AppToast?.show(message, { duration: ms });
+  // Short message in the board's own toast box (#toast, styled by board.css).
+  function toast(message) {
+    const t = $('toast'); if (!t) return;
+    t.textContent = message; t.className = 'toast toast-info visible';
+    setTimeout(() => t.classList.remove('visible'), 3000);
+  }
 })();
