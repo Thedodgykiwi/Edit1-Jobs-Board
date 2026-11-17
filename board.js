@@ -1115,11 +1115,11 @@
 
     completedSection.classList.toggle("collapsed", uiState.completedCollapsed);
     completedButton.setAttribute("aria-expanded", String(!uiState.completedCollapsed));
-    completedButton.querySelector("span").textContent = uiState.completedCollapsed ? `Show ${completedTotal} ${completedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    completedButton.title = uiState.completedCollapsed ? "Show completed jobs" : "Hide completed jobs";
 
     biffedSection.classList.toggle("collapsed", uiState.biffedCollapsed);
     biffedButton.setAttribute("aria-expanded", String(!uiState.biffedCollapsed));
-    biffedButton.querySelector("span").textContent = uiState.biffedCollapsed ? `Show ${biffedTotal} ${biffedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    biffedButton.title = uiState.biffedCollapsed ? "Show biffed jobs" : "Hide biffed jobs";
     announceUi();
   }
 
@@ -1293,6 +1293,9 @@
   }
 
   function renderSuites() {
+    const inUse = suiteNumbers.filter((suite) => state.suites[suite]).length; // issue #32
+    document.getElementById("suitesInUseCount").textContent = inUse;
+    document.getElementById("suitesInUseCount").title = `${inUse} ${inUse === 1 ? "suite" : "suites"} in use`;
     suiteGrid.classList.toggle("compact-suites", uiState.compactSuites);
     suiteGrid.classList.toggle("condensed-empty-suites", uiState.emptySuitePresentation === "condensed");
     const visibleSuites = suiteNumbers.filter((suite) => {

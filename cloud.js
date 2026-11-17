@@ -119,16 +119,47 @@ async function tasks(payload, options = {}) {
 }
 
 // ---- History search: done in the browser over every saved day (newest first). ----
-// Small team, one doc per day: a few hundred reads per search session at most.
-let historyCache = null; // { at, rows: [{ date, board }] }
+// Issue #19: days already fetched are kept (in memory and in Firestore's copy on
+// this device), and each search only asks the server for days saved since the
+// newest one we hold. The first search on a device reads every day once; after
+// that a search costs a read per changed day (usually just today).
+const days = new Map(); // date -> board
+// Newest updatedAt (ms) from a server read that covered every day. Kept per
+// device and stage: the device copy alone can't be trusted as complete (it may
+// hold only the days the board was opened on).
+const SYNC_KEY = `edit1-jobs:${STAGE}:history-synced-to`;
+let syncedTo = 0;
+let seeded = false;
+let lastCheck = 0;
+
+const keep = (d) => { try { days.set(d.id, JSON.parse(d.data().payload)); } catch { /* skip unreadable day */ } };
+const atOf = (d) => d.data().updatedAt?.toMillis?.() || 0;
+
 async function allBoards() {
-  if (historyCache && Date.now() - historyCache.at < 60000) return historyCache.rows;
-  const snap = await fsApi.fs.getDocs(fsApi.fs.collection(fsApi.db, 'stages', STAGE, 'boards'));
-  const rows = [];
-  snap.forEach((d) => { try { rows.push({ date: d.id, board: JSON.parse(d.data().payload) }); } catch { /* skip unreadable day */ } });
-  rows.sort((a, b) => (a.date < b.date ? 1 : -1));
-  historyCache = { at: Date.now(), rows };
-  return rows;
+  const { fs, db } = fsApi;
+  const col = fs.collection(db, 'stages', STAGE, 'boards');
+  if (!seeded) {
+    seeded = true;
+    const saved = Number(localStorage.getItem(SYNC_KEY)) || 0;
+    if (saved) {
+      // Free: no server reads. If the device copy has gone, start again from scratch.
+      try { const snap = await fs.getDocsFromCache(col); snap.forEach(keep); if (snap.size) syncedTo = saved; } catch { /* none */ }
+    }
+  }
+  if (Date.now() - lastCheck > 10000) {
+    try {
+      // ">=": a day saved in the same millisecond isn't missed (costs one extra read).
+      const ask = syncedTo ? fs.query(col, fs.where('updatedAt', '>=', fs.Timestamp.fromMillis(syncedTo))) : col;
+      const snap = await fs.getDocsFromServer(ask);
+      snap.forEach((d) => { keep(d); syncedTo = Math.max(syncedTo, atOf(d)); });
+      if (syncedTo) localStorage.setItem(SYNC_KEY, String(syncedTo));
+      lastCheck = Date.now();
+    } catch (err) {
+      // Offline: search what this device already has.
+      if (err?.code !== 'unavailable' || !days.size) throw err;
+    }
+  }
+  return [...days].map(([date, board]) => ({ date, board })).sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 const norm = (v) => (typeof v === 'string' ? v.trim().toLowerCase() : '');
