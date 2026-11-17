@@ -966,6 +966,20 @@
     const walk = (node) => {
       [...node.childNodes].forEach((child) => {
         if (child.nodeType !== Node.ELEMENT_NODE) return;
+        // Issue #33: the editor makes each new line a <div>; keep it as a paragraph instead of losing the line break
+        if (child.tagName === "DIV" && ![...child.children].some((c) => /^(P|DIV|H\d|UL|OL|LI|TABLE)$/.test(c.tagName))) {
+          const para = document.createElement("p");
+          para.append(...child.childNodes);
+          child.replaceWith(para);
+          child = para;
+        }
+        // Pasted text often comes wrapped in <b style="font-weight:normal">: that isn't bold, so unwrap it
+        if ((child.tagName === "B" || child.tagName === "STRONG") && /font-weight\s*:\s*(normal|400)/i.test(child.getAttribute("style") || "")) {
+          const children = [...child.childNodes];
+          child.replaceWith(...children);
+          children.forEach(walk);
+          return;
+        }
         if (!allowed.has(child.tagName)) {
           const children = [...child.childNodes];
           child.replaceWith(...children);
@@ -985,6 +999,24 @@
       });
     };
     walk(source.content);
+    // Issue #33: wrap loose top-level text (from sheets saved before the fix) in paragraphs, one per line,
+    // so making one line a heading can't turn the whole run of text into a heading
+    const blocks = /^(P|H3|H4|UL|OL)$/;
+    let run = [];
+    const flush = () => {
+      if (!run.length) return;
+      const lines = [[]];
+      run.forEach((n) => (n.nodeName === "BR" ? lines.push([]) : lines.at(-1).push(n)));
+      const marker = document.createComment("");
+      run[0].before(marker);
+      run.forEach((n) => n.remove());
+      lines.filter((l) => l.some((n) => n.textContent.trim())).forEach((l) => { const para = document.createElement("p"); para.append(...l); marker.before(para); });
+      marker.remove();
+      run = [];
+    };
+    [...source.content.childNodes].forEach((n) => (n.nodeType === Node.ELEMENT_NODE && blocks.test(n.tagName) ? flush() : run.push(n)));
+    flush();
+    source.content.querySelectorAll("p").forEach((para) => { if (!para.textContent.trim()) para.remove(); });
     return source.innerHTML.trim();
   }
 
@@ -1011,6 +1043,7 @@
     document.getElementById("editDaySheetButton").hidden = editing;
     document.getElementById("closeDaySheetButton").hidden = editing;
     document.getElementById("saveDaySheetButton").hidden = !editing;
+    if (editing) document.execCommand("defaultParagraphSeparator", false, "p"); // issue #33: new lines are paragraphs, not <div>s
     if (editing) requestAnimationFrame(() => daySheetEditor.focus());
   }
 
