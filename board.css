@@ -1581,3 +1581,19 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
 /* Editors & suites count (issue #32): suites in use beside the title; phones show just "Editors" so the row stays on one line */
 #suitesInUseCount { margin-left: .55rem; vertical-align: .3em; }
 @media (max-width: 600px) { .suites-title-long { display: none; } }
+
+/* Day Sheet toolbar (issue #34): style menu, dividers between groups, and what the new controls produce */
+.day-sheet-toolbar { flex-wrap: wrap; }
+.day-sheet-style { height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.day-sheet-style option { background: var(--panel); color: var(--text); }
+.day-sheet-style:focus-visible, .day-sheet-toolbar button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.day-sheet-sep { width: 1px; height: 18px; margin: 0 3px; background: var(--line); }
+.day-sheet-toolbar em { font-family: Georgia, serif; font-size: 14px; }
+:is(.day-sheet-view, .day-sheet-editor) .ds-small { font-size: 12px; }
+:is(.day-sheet-view, .day-sheet-editor) .ds-large { font-size: 17px; }
+:is(.day-sheet-view, .day-sheet-editor) hr { margin: 14px 0; border: 0; border-top: 1px solid var(--line); }
+:is(.day-sheet-view, .day-sheet-editor) details { margin: 12px 0; }
+:is(.day-sheet-view, .day-sheet-editor) summary { cursor: pointer; color: var(--text); font-size: 16px; font-weight: 700; line-height: 1.3; }
+:is(.day-sheet-view, .day-sheet-editor) details > :not(summary) { margin-left: 18px; }
+:is(.day-sheet-view, .day-sheet-editor) details[open] > summary { margin-bottom: 7px; }
+@media (max-width: 420px) { .day-sheet-toolbar { gap: 1px; padding: 6px 4px; } .day-sheet-sep { display: none; } .day-sheet-toolbar button { width: 27px; } .day-sheet-style { max-width: 92px; padding: 0 2px; } }

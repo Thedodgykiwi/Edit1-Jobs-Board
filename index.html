@@ -728,11 +728,20 @@
         <p class="day-sheet-intro" id="daySheetIntro">Today’s newsroom agenda and planned output.</p>
         <div class="day-sheet-view" id="daySheetView"></div>
         <div class="day-sheet-toolbar" id="daySheetToolbar" role="toolbar" aria-label="Day Sheet formatting" hidden>
+          <!-- Issue #34: style menu + grouped buttons -->
+          <select class="day-sheet-style" id="daySheetStyle" aria-label="Text style" title="Text style">
+            <option value="p">Paragraph</option><option value="h3">Heading</option><option value="h4">Subheading</option><option value="small">Small text</option><option value="large">Large text</option>
+          </select>
+          <span class="day-sheet-sep" aria-hidden="true"></span>
           <button type="button" data-day-sheet-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
-          <button type="button" data-day-sheet-command="heading" aria-label="Heading" title="Heading">H</button>
-          <button type="button" data-day-sheet-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
-          </button>
+          <button type="button" data-day-sheet-command="italic" aria-label="Italic" title="Italic"><em>I</em></button>
+          <span class="day-sheet-sep" aria-hidden="true"></span>
+          <button type="button" data-day-sheet-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg></button>
+          <button type="button" data-day-sheet-command="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10M4 4h1v4M4 8h2M4 14.5a1 1 0 0 1 2 0c0 1-2 1.5-2 3.5h2" /></svg></button>
+          <span class="day-sheet-sep" aria-hidden="true"></span>
+          <button type="button" data-day-sheet-command="divider" aria-label="Divider" title="Divider"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18" /><path d="M7 7h10M7 17h10" opacity=".35" /></svg></button>
+          <button type="button" data-day-sheet-command="toggle" aria-label="Toggle heading (fold away the text under it)" title="Toggle heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6 6 6-6 6" /></svg></button>
+          <span class="day-sheet-sep" aria-hidden="true"></span>
           <button type="button" data-day-sheet-command="removeFormat" aria-label="Clear formatting" title="Clear formatting">Tx</button>
         </div>
         <div class="day-sheet-editor" id="daySheetEditor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Paste today’s Day Sheet here…" hidden></div>

@@ -962,12 +962,12 @@
   function sanitiseDaySheetHtml(value) {
     const source = document.createElement("template");
     source.innerHTML = String(value || "");
-    const allowed = new Set(["P", "BR", "STRONG", "B", "EM", "I", "H3", "H4", "UL", "OL", "LI", "A"]);
+    const allowed = new Set(["P", "BR", "STRONG", "B", "EM", "I", "H3", "H4", "UL", "OL", "LI", "A", "HR", "DETAILS", "SUMMARY"]);
     const walk = (node) => {
       [...node.childNodes].forEach((child) => {
         if (child.nodeType !== Node.ELEMENT_NODE) return;
         // Issue #33: the editor makes each new line a <div>; keep it as a paragraph instead of losing the line break
-        if (child.tagName === "DIV" && ![...child.children].some((c) => /^(P|DIV|H\d|UL|OL|LI|TABLE)$/.test(c.tagName))) {
+        if (child.tagName === "DIV" && ![...child.children].some((c) => /^(P|DIV|H\d|UL|OL|LI|TABLE|HR|DETAILS)$/.test(c.tagName))) {
           const para = document.createElement("p");
           para.append(...child.childNodes);
           child.replaceWith(para);
@@ -987,7 +987,9 @@
           return;
         }
         const href = child.tagName === "A" ? child.getAttribute("href") || "" : "";
+        const size = child.tagName === "P" && /\bds-(small|large)\b/.exec(child.className || ""); // issue #34: text size
         [...child.attributes].forEach((attribute) => child.removeAttribute(attribute.name));
+        if (size) child.className = size[0];
         if (child.tagName === "A") {
           if (/^https?:\/\//i.test(href)) {
             child.setAttribute("href", href);
@@ -1001,7 +1003,7 @@
     walk(source.content);
     // Issue #33: wrap loose top-level text (from sheets saved before the fix) in paragraphs, one per line,
     // so making one line a heading can't turn the whole run of text into a heading
-    const blocks = /^(P|H3|H4|UL|OL)$/;
+    const blocks = /^(P|H3|H4|UL|OL|HR|DETAILS)$/;
     let run = [];
     const flush = () => {
       if (!run.length) return;
@@ -1026,6 +1028,7 @@
 
   function openDaySheet() {
     daySheetEditor.innerHTML = daySheetHtml();
+    daySheetEditor.querySelectorAll("details").forEach((d) => { d.open = true; }); // toggles open while editing, folded when reading
     setDaySheetMode(false);
     document.getElementById("daySheetDate").textContent = formattedBoardDate(selectedDateKey, { short: true });
     daySheetDialog.showModal();
@@ -1060,10 +1063,54 @@
     document.execCommand("insertHTML", false, sanitiseDaySheetHtml(html));
   }
 
+  // Issue #34: the block (paragraph, heading, list item…) the cursor is in
+  function daySheetBlock() {
+    const node = getSelection().anchorNode;
+    const el = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+    if (!el || !daySheetEditor.contains(el)) return null;
+    return el.closest("p, h3, h4, li, summary");
+  }
+
+  function setDaySheetStyle(value) {
+    daySheetEditor.focus();
+    const sized = value === "small" || value === "large";
+    document.execCommand("formatBlock", false, sized ? "p" : value);
+    const block = daySheetBlock();
+    if (block?.tagName === "P") block.className = sized ? `ds-${value}` : "";
+    if (block && !block.className) block.removeAttribute("class");
+    syncDaySheetStyle();
+  }
+
+  function syncDaySheetStyle() {
+    const block = daySheetBlock();
+    const select = document.getElementById("daySheetStyle");
+    if (!block) return;
+    select.value = block.tagName === "H3" || block.tagName === "H4" ? block.tagName.toLowerCase()
+      : block.classList.contains("ds-small") ? "small" : block.classList.contains("ds-large") ? "large" : "p";
+  }
+
   function formatDaySheet(command) {
     daySheetEditor.focus();
-    if (command === "heading") document.execCommand("formatBlock", false, "h3");
-    else document.execCommand(command, false, null);
+    if (command === "heading") setDaySheetStyle("h3");
+    else if (command === "divider") document.execCommand("insertHTML", false, "<hr><p><br></p>");
+    else if (command === "toggle") {
+      // Turn the current line into a toggle heading, with an empty line under it to type into
+      const block = daySheetBlock();
+      const line = block?.closest("#daySheetEditor > *") || null;
+      const details = document.createElement("details");
+      details.open = true;
+      const summary = document.createElement("summary");
+      summary.textContent = (line?.textContent || "").trim() || "Toggle heading";
+      const body = document.createElement("p");
+      body.append(document.createElement("br"));
+      details.append(summary, body);
+      if (line && line.tagName !== "UL" && line.tagName !== "OL") line.replaceWith(details);
+      else daySheetEditor.append(details);
+      getSelection().collapse(body, 0);
+    } else {
+      document.execCommand(command, false, null);
+      if (command === "removeFormat") setDaySheetStyle("p");
+    }
   }
 
   function initialsFor(name) {
@@ -2937,6 +2984,8 @@
   document.getElementById("daySheetButton").addEventListener("click", openDaySheet);
   document.getElementById("editDaySheetButton").addEventListener("click", () => setDaySheetMode(true));
   document.getElementById("saveDaySheetButton").addEventListener("click", saveDaySheet);
+  document.getElementById("daySheetStyle").addEventListener("change", (event) => setDaySheetStyle(event.target.value));
+  document.addEventListener("selectionchange", () => { if (!daySheetEditor.hidden) syncDaySheetStyle(); });
   document.querySelectorAll("[data-day-sheet-command]").forEach((button) => {
     button.addEventListener("mousedown", (event) => event.preventDefault());
     button.addEventListener("click", () => formatDaySheet(button.dataset.daySheetCommand));
