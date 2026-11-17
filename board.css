@@ -1577,3 +1577,7 @@ body.is-offline #syncBar { display: none; }   /* the offline strip explains inst
 .report-done { text-align: center; padding: .3rem 0 .2rem; }
 .report-done p { margin: .3rem 0; }
 .report-tick .ic { width: 2.4rem; height: 2.4rem; color: var(--cyan); }
+
+/* Editors & suites count (issue #32): suites in use beside the title; phones show just "Editors" so the row stays on one line */
+#suitesInUseCount { margin-left: .55rem; vertical-align: .3em; }
+@media (max-width: 600px) { .suites-title-long { display: none; } }

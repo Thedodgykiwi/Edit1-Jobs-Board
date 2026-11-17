@@ -149,7 +149,8 @@
             <div class="suites-title-row">
             <button class="suite-filter-heading filter-all" id="suiteFilterButton" type="button" aria-label="Showing all suites. Tap to show free suites" aria-keyshortcuts="F">
               <span class="eyebrow" id="suiteFilterEyebrow">Tap title to filter · All</span>
-              <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors &amp; suites</span>
+              <!-- Issue #32: suites-in-use count; phones show just "Editors" so it fits on one line -->
+              <span class="suite-section-title" id="operationsTitle" role="heading" aria-level="2">Editors<span class="suites-title-long"> &amp; suites</span> <span class="count-badge count-badge-muted" id="suitesInUseCount" title="Suites in use">0</span></span>
             </button>
             <button type="button" id="suitesCollapseToggle" class="suites-collapse-toggle" aria-controls="suiteGrid" aria-expanded="true" aria-label="Hide suites" title="Hide suites"><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button>
             </div>
@@ -175,12 +176,9 @@
           <div class="column-heading">
             <div>
               <p class="eyebrow">Signed off this day</p>
-              <h2 id="completedTitle">Completed <span class="count-badge count-badge-muted" id="completedCount">0</span></h2>
+              <!-- Issue #30: the title opens/closes Completed, like the Job Queue's (#3) -->
+              <h2 id="completedTitle"><button type="button" id="completedCollapseButton" class="queue-title-toggle" aria-controls="completedContent" aria-expanded="false" title="Show completed jobs">Completed <span class="count-badge count-badge-muted" id="completedCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
             </div>
-            <button class="collapse-button" id="completedCollapseButton" type="button" aria-expanded="false" aria-controls="completedContent">
-              <span>Show completed</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
           </div>
           <div class="collapsible-content" id="completedContent">
             <div class="completion-filters" aria-label="Filter completed jobs">
@@ -205,12 +203,9 @@
           <div class="column-heading">
             <div>
               <p class="eyebrow">Removed from the running order</p>
-              <h2 id="biffedTitle">Biffed <span class="count-badge count-badge-biffed" id="biffedCount">0</span></h2>
+              <!-- Issue #31: the title opens/closes Biffed, like Completed (#30) -->
+              <h2 id="biffedTitle"><button type="button" id="biffedCollapseButton" class="queue-title-toggle" aria-controls="biffedContent" aria-expanded="false" title="Show biffed jobs">Biffed <span class="count-badge count-badge-biffed" id="biffedCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
             </div>
-            <button class="collapse-button" id="biffedCollapseButton" type="button" aria-expanded="false" aria-controls="biffedContent">
-              <span>Show biffed</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
           </div>
           <div class="collapsible-content" id="biffedContent">
             <div class="biffed-list" id="biffedJobs"></div>
