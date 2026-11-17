@@ -175,12 +175,9 @@
           <div class="column-heading">
             <div>
               <p class="eyebrow">Signed off this day</p>
-              <h2 id="completedTitle">Completed <span class="count-badge count-badge-muted" id="completedCount">0</span></h2>
+              <!-- Issue #30: the title opens/closes Completed, like the Job Queue's (#3) -->
+              <h2 id="completedTitle"><button type="button" id="completedCollapseButton" class="queue-title-toggle" aria-controls="completedContent" aria-expanded="false" title="Show completed jobs">Completed <span class="count-badge count-badge-muted" id="completedCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
             </div>
-            <button class="collapse-button" id="completedCollapseButton" type="button" aria-expanded="false" aria-controls="completedContent">
-              <span>Show completed</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
           </div>
           <div class="collapsible-content" id="completedContent">
             <div class="completion-filters" aria-label="Filter completed jobs">

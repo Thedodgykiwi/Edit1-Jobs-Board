@@ -1115,7 +1115,7 @@
 
     completedSection.classList.toggle("collapsed", uiState.completedCollapsed);
     completedButton.setAttribute("aria-expanded", String(!uiState.completedCollapsed));
-    completedButton.querySelector("span").textContent = uiState.completedCollapsed ? `Show ${completedTotal} ${completedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    completedButton.title = uiState.completedCollapsed ? "Show completed jobs" : "Hide completed jobs";
 
     biffedSection.classList.toggle("collapsed", uiState.biffedCollapsed);
     biffedButton.setAttribute("aria-expanded", String(!uiState.biffedCollapsed));
