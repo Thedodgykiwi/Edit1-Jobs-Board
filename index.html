@@ -202,12 +202,9 @@
           <div class="column-heading">
             <div>
               <p class="eyebrow">Removed from the running order</p>
-              <h2 id="biffedTitle">Biffed <span class="count-badge count-badge-biffed" id="biffedCount">0</span></h2>
+              <!-- Issue #31: the title opens/closes Biffed, like Completed (#30) -->
+              <h2 id="biffedTitle"><button type="button" id="biffedCollapseButton" class="queue-title-toggle" aria-controls="biffedContent" aria-expanded="false" title="Show biffed jobs">Biffed <span class="count-badge count-badge-biffed" id="biffedCount">0</span><span class="queue-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span></button></h2>
             </div>
-            <button class="collapse-button" id="biffedCollapseButton" type="button" aria-expanded="false" aria-controls="biffedContent">
-              <span>Show biffed</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
           </div>
           <div class="collapsible-content" id="biffedContent">
             <div class="biffed-list" id="biffedJobs"></div>

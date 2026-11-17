@@ -1119,7 +1119,7 @@
 
     biffedSection.classList.toggle("collapsed", uiState.biffedCollapsed);
     biffedButton.setAttribute("aria-expanded", String(!uiState.biffedCollapsed));
-    biffedButton.querySelector("span").textContent = uiState.biffedCollapsed ? `Show ${biffedTotal} ${biffedTotal === 1 ? "job" : "jobs"}` : "Hide jobs";
+    biffedButton.title = uiState.biffedCollapsed ? "Show biffed jobs" : "Hide biffed jobs";
     announceUi();
   }
 
