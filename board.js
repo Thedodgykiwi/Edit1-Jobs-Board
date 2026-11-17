@@ -1293,6 +1293,9 @@
   }
 
   function renderSuites() {
+    const inUse = suiteNumbers.filter((suite) => state.suites[suite]).length; // issue #32
+    document.getElementById("suitesInUseCount").textContent = inUse;
+    document.getElementById("suitesInUseCount").title = `${inUse} ${inUse === 1 ? "suite" : "suites"} in use`;
     suiteGrid.classList.toggle("compact-suites", uiState.compactSuites);
     suiteGrid.classList.toggle("condensed-empty-suites", uiState.emptySuitePresentation === "condensed");
     const visibleSuites = suiteNumbers.filter((suite) => {
