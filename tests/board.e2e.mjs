@@ -180,6 +180,20 @@ await check('header: tasks and wheel buttons open their windows', async () => {
   ok(await p.evaluate(() => document.getElementById('wheelDialog').open), 'wheel window did not open');
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
 });
+await check('history search finds old days, then picks up a newly saved day (issue #19)', async () => {
+  const day = (date, title, at) => fetch(`${FS}/stages/local/boards/${date}`, { method: 'PATCH', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { payload: { stringValue: JSON.stringify({ date, editors: [], jobs: [{ id: 'h-' + date, title, status: 'completed', history: [] }] }) },
+      revision: { integerValue: '1' }, mutationId: { stringValue: 'seed' }, updatedAt: { timestampValue: at }, updatedBy: { stringValue: 'seed' } } }) });
+  const find = (q) => p.evaluate((q) => window.Edit1Cloud.search({ q }).then((r) => r.results.map((x) => x.date)), q);
+  await day('2026-01-05', 'Archive promo one', '2026-01-05T10:00:00Z');
+  ok((await find('archive promo')).join() === '2026-01-05', 'first search should find the old day');
+  ok(await p.evaluate(() => Number(localStorage.getItem('edit1-jobs:local:history-synced-to')) > 0), 'device should remember it has every day');
+  await day('2026-02-01', 'Archive promo two', new Date().toISOString());
+  await new Promise((r) => setTimeout(r, 10500));   // search checks the server at most every 10 s
+  ok((await find('archive promo')).join() === '2026-02-01,2026-01-05', 'second search should add the newly saved day');
+  await p.reload(); await upToDate();
+  ok((await find('archive promo')).join() === '2026-02-01,2026-01-05', 'after a reload both days are still found');
+});
 await check('changes are still there after a reload', async () => {
   await p.reload(); await upToDate();
   ok(await where('Weather promo') === 'job queue', 'Weather promo moved');
